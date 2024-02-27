@@ -4,7 +4,6 @@
 // =================================================================================================
 
 #include "CoilData.h"
-#undef LOCAL_LOG_LEVEL
 #include "Logging.h"
 
 // Constructor: optional size in bits, optional initial value for all bits

@@ -18,12 +18,11 @@ typedef std::function<void(bool level)> RTScallback;
 using namespace Modbus;  // NOLINT
 
 // RTUutils is bundling the send, receive and CRC functions for Modbus RTU communications.
-// RTU server and client will make use of it. 
+// RTU client will make use of it. 
 // All functions are static!
 class RTUutils {
 public:
   friend class ModbusClientRTU;
-  friend class ModbusServerRTU;
 
 // calcCRC: calculate the CRC16 value for a given block of data
   static uint16_t calcCRC(const uint8_t *data, uint16_t len);

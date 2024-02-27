@@ -5,8 +5,6 @@
 #include "options.h"
 #include "ModbusMessage.h"
 #include "RTUutils.h"
-#undef LOCAL_LOG_LEVEL
-// #define LOCAL_LOG_LEVEL LOG_LEVEL_VERBOSE
 #include "Logging.h"
 
 #if HAS_FREERTOS
@@ -109,7 +107,7 @@ uint32_t RTUutils::calculateInterval(uint32_t baudRate) {
   // silent interval is at least 3.5x character time
   interval = 35000000UL / baudRate;  // 3.5 * 10 bits * 1000 µs * 1000 ms / baud
   if (interval < 1750) interval = 1750;       // lower limit according to Modbus RTU standard
-  LOG_V("Calc interval(%u)=%u\n", baudRate, interval);
+  log_v("Calc interval(%u)=%u", baudRate, interval);
   return interval;
 }
 
@@ -147,7 +145,7 @@ void RTUutils::send(Stream& serial, unsigned long& lastMicros, uint32_t interval
     serial.write(ASCIIwrite[crc & 0x0F]);
     
     // Send lead-out
-    serial.write("\r\n");
+    serial.write("\r");
     serial.flush();
     // Toggle rtsPin, if necessary
     rts(LOW);
@@ -170,7 +168,7 @@ void RTUutils::send(Stream& serial, unsigned long& lastMicros, uint32_t interval
     rts(LOW);
   }
 
-  HEXDUMP_D("Sent packet", data, len);
+  log_buf_d("Sent packet", data, len);
 
   // Mark end-of-message time for next interval
   lastMicros = micros();
@@ -259,7 +257,7 @@ ModbusMessage RTUutils::receive(uint8_t caller, Stream& serial, uint32_t timeout
             // Are we past the interval gap?
             if (micros() - lastMicros >= interval) {
               // Yes, terminate reading
-              LOG_V("%c/%ldus without data after %u\n", (const char)caller, micros() - lastMicros, bufferPtr);
+              log_v("%c/%ldus without data after %u", (const char)caller, micros() - lastMicros, bufferPtr);
               state = DATA_READ;
               break;
             }
@@ -269,8 +267,8 @@ ModbusMessage RTUutils::receive(uint8_t caller, Stream& serial, uint32_t timeout
       // DATA_READ: successfully gathered some data. Prepare return object.
       case DATA_READ:
         // Did we get a sensible buffer length?
-        LOG_V("%c/", (const char)caller);
-        HEXDUMP_V("Raw buffer received", buffer, bufferPtr);
+        log_v("%c/", (const char)caller);
+        log_buf_v("Raw buffer received", buffer, bufferPtr);
         if (bufferPtr >= 4)
         {
           // Yes. Check CRC
@@ -386,12 +384,12 @@ ModbusMessage RTUutils::receive(uint8_t caller, Stream& serial, uint32_t timeout
               }
               hadBytes = false;
               break;
-            // A_WAIT_LEAD_OUT: await \n
+            // A_WAIT_LEAD_OUT: await 
             case A_WAIT_LEAD_OUT:
               if (b == 0xF2) {
                 // Lead-out byte 2 received. Transfer buffer to returned message
-                LOG_V("%c/", (const char)caller);
-                HEXDUMP_V("Raw buffer received", buffer, bufferPtr);
+                log_v("%c/", (const char)caller);
+                log_buf_v("Raw buffer received", buffer, bufferPtr);
                 // Did we get a sensible buffer length?
                 if (bufferPtr >= 3)
                 {
@@ -434,8 +432,8 @@ ModbusMessage RTUutils::receive(uint8_t caller, Stream& serial, uint32_t timeout
   // Deallocate buffer
   delete[] buffer;
 
-  LOG_D("%c/", (const char)caller);
-  HEXDUMP_D("Received packet", rv.data(), rv.size());
+  log_d("%c/", (const char)caller);
+  log_buf_d("Received packet", rv.data(), rv.size());
 
   return rv;
 }

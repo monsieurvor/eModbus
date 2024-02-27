@@ -9,8 +9,6 @@
 #include "ModbusServerWiFi.h"
 #include "ModbusBridgeWiFi.h"
 
-#undef LOCAL_LOG_LEVEL
-#define LOCAL_LOG_LEVEL LOG_LEVEL_VERBOSE
 #include "Logging.h"
 
 #include "TCPstub.h"
@@ -147,7 +145,7 @@ ModbusMessage FC41(ModbusMessage request) {
 
 // Worker function for broadcast requests
 void BroadcastWorker(ModbusMessage request) {
-  HEXDUMP_D("Broadcast caught", request.data(), request.size());
+  log_buf_d("Broadcast caught", request.data(), request.size());
   // Count broadcasts
   broadcastCnt++;
 }
@@ -203,11 +201,11 @@ bool testOutput(const char *testname, const char *name, ModbusMessage expected, 
 
   if (expected == received) {
     testsPassed++;
-    if (printPassed) Serial.printf("%s, %s - passed.\n", testname, name);
+    if (printPassed) Serial.printf("%s, %s - passed.", testname, name);
     return true;
   } 
 
-  Serial.printf("%s, %s - failed:\n", testname, name);
+  Serial.printf("%s, %s - failed:", testname, name);
   Serial.print("   Expected:");
   for (auto& b : expected) {
     Serial.printf(" %02X", b);
@@ -436,7 +434,7 @@ void handleData(ModbusMessage response, uint32_t token)
     TestCase *myTest(tc->second);
     testOutput(myTest->testname, myTest->name, myTest->expected, response);
   } else {
-    Serial.printf("Could not find test case for token %08X\n", token);
+    Serial.printf("Could not find test case for token %08X", token);
   }
 }
 
@@ -453,7 +451,7 @@ void handleError(Error err, uint32_t token)
     response.add(err);
     testOutput(myTest->testname, myTest->name, myTest->expected, response);
   } else {
-    Serial.printf("Could not find test case for token %08X\n", token);
+    Serial.printf("Could not find test case for token %08X", token);
   }
 }
 
@@ -629,7 +627,7 @@ void setup()
   testOutput(__func__, LNO(__LINE__) "add double swapped", makeVector("11 88 45 33 F6 23 C0 CA C0 11"), adder);
 
   // Print summary.
-  Serial.printf("----->    Generate messages tests: %4d, passed: %4d\n", testsExecuted, testsPassed);
+  Serial.printf("----->    Generate messages tests: %4d, passed: %4d", testsExecuted, testsPassed);
 
 
   // ******************************************************************************
@@ -1091,7 +1089,7 @@ void setup()
   // Print summary. We will have to wait a bit to get all test cases executed!
   WAIT_FOR_FINISH(TestTCP)
 
-  Serial.printf("----->    TCP loop stub tests: %4d, passed: %4d\n", testsExecuted, testsPassed);
+  Serial.printf("----->    TCP loop stub tests: %4d, passed: %4d", testsExecuted, testsPassed);
 
 
   // ******************************************************************************
@@ -1113,12 +1111,12 @@ void setup()
   Serial1.begin(BaudRate, SERIAL_8N1, GPIO_NUM_32, GPIO_NUM_33);
   Serial2.begin(BaudRate, SERIAL_8N1, GPIO_NUM_17, GPIO_NUM_16);
 
-  Serial.printf("Serial1 at %d baud\n", Serial1.baudRate());
-  Serial.printf("Serial2 at %d baud\n", Serial2.baudRate());
+  Serial.printf("Serial1 at %d baud", Serial1.baudRate());
+  Serial.printf("Serial2 at %d baud", Serial2.baudRate());
 
 // CHeck if connections are made
   char chkSerial[64];
-  snprintf(chkSerial, 64, "This is Serial1\n");
+  snprintf(chkSerial, 64, "This is Serial1");
   uint16_t chkLen = strlen(chkSerial);
   uint16_t chkCnt = 0;
   bool chkFailed = false;
@@ -1133,11 +1131,11 @@ void setup()
     }
   }
   if (chkCnt != chkLen) {
-    Serial.printf("Serial1 failed: %d != %d\n", chkLen, chkCnt);
+    Serial.printf("Serial1 failed: %d != %d", chkLen, chkCnt);
     chkFailed = true;
   }
 
-  snprintf(chkSerial, 64, "And this is Serial2\n");
+  snprintf(chkSerial, 64, "And this is Serial2");
   chkLen = strlen(chkSerial);
   chkCnt = 0;
 
@@ -1151,7 +1149,7 @@ void setup()
     }
   }
   if (chkCnt != chkLen) {
-    Serial.printf("Serial2 failed: %d != %d\n", chkLen, chkCnt);
+    Serial.printf("Serial2 failed: %d != %d", chkLen, chkCnt);
     chkFailed = true;
   }
   if (chkFailed) {
@@ -1481,7 +1479,7 @@ void setup()
     testsExecuted++;
     // We expect one more LOW callback (initialization)
     if (cntRTShigh != ExpectedToggles || cntRTSlow != ExpectedToggles + 1) {
-      Serial.printf("RTS toggle counts do not match. Expected=%d, HIGH=%d, LOW=%d\n", ExpectedToggles, cntRTShigh, cntRTSlow);
+      Serial.printf("RTS toggle counts do not match. Expected=%d, HIGH=%d, LOW=%d", ExpectedToggles, cntRTShigh, cntRTSlow);
     } else {
       testsPassed++;
     }
@@ -1491,7 +1489,7 @@ void setup()
     // First set client to ASCII only to check for error returns
     RTUclient.useModbusASCII();
 
-    Serial.printf("Expect an E2 CRC error from ModbusServerRTU - is intended!\n");
+    Serial.printf("Expect an E2 CRC error from ModbusServerRTU - is intended!");
 
     // #12: read a word of data with no ASCII server present
     tc = new TestCase { 
@@ -1555,7 +1553,7 @@ void setup()
     e = RTUclient.addBroadcastMessage(bcdata, bclen);
     if (e != SUCCESS) {
       ModbusError me(e);
-      LOG_N("%s failed: %d - %s\n", (const char *)bcdata, (int)me, (const char *)me);
+      log_w("%s failed: %d - %s", (const char *)bcdata, (int)me, (const char *)me);
     }
     testsExecuted++;
     // We have no worker registered yet, so the message shall be discarded
@@ -1575,7 +1573,7 @@ void setup()
     e = RTUclient.addBroadcastMessage(bcdata, bclen);
     if (e != SUCCESS) {
       ModbusError me(e);
-      LOG_N("%s failed: %d - %s\n", (const char *)bcdata, (int)me, (const char *)me);
+      log_w("%s failed: %d - %s", (const char *)bcdata, (int)me, (const char *)me);
     }
     testsExecuted++;
     // The BC must have been caught
@@ -1587,7 +1585,7 @@ void setup()
     if (!didit && !RTUserver.getWorker(1, USER_DEFINED_48)) {
       testsPassed++;
     } else {
-      LOG_N("unregisterWorker 01/48 failed (didit=%d)\n", didit ? 1 : 0);
+      log_w("unregisterWorker 01/48 failed (didit=%d)", didit ? 1 : 0);
     }
 
     didit = RTUserver.unregisterWorker(1, USER_DEFINED_44);
@@ -1595,7 +1593,7 @@ void setup()
     if (didit && !RTUserver.getWorker(1, USER_DEFINED_44)) {
       testsPassed++;
     } else {
-      LOG_N("unregisterWorker 01/44 failed (didit=%d)\n", didit ? 1 : 0);
+      log_w("unregisterWorker 01/44 failed (didit=%d)", didit ? 1 : 0);
     }
 
     didit = RTUserver.unregisterWorker(4);
@@ -1603,7 +1601,7 @@ void setup()
     if (!didit) {
       testsPassed++;
     } else {
-      LOG_N("unregisterWorker 04 failed (didit=%d)\n", didit ? 1 : 0);
+      log_w("unregisterWorker 04 failed (didit=%d)", didit ? 1 : 0);
     }
 
     didit = RTUserver.unregisterWorker(2);
@@ -1611,7 +1609,7 @@ void setup()
     if (didit && !RTUserver.getWorker(2, READ_HOLD_REGISTER)) {
       testsPassed++;
     } else {
-      LOG_N("unregisterWorker 02 failed (didit=%d)\n", didit ? 1 : 0);
+      log_w("unregisterWorker 02 failed (didit=%d)", didit ? 1 : 0);
     }
     WAIT_FOR_FINISH(RTUclient)
 
@@ -1630,21 +1628,21 @@ void setup()
       Serial2.updateBaudRate(myBaud);
       RTUclient.begin(Serial1);
       RTUserver.begin(Serial2);
-      LOG_N("testing %d baud.\n", myBaud);
+      log_w("testing %d baud.", myBaud);
       testsExecuted++;
       ModbusMessage ret = RTUclient.syncRequest(myReq, Token++);
       Error e = ret.getError();
       // If not successful, report it
       if (e != SUCCESS) {
         ModbusError me(e);
-        LOG_N("Baud test failed at %u (%02X - %s)\n", myBaud, e, (const char *)me);
+        log_w("Baud test failed at %u (%02X - %s)", myBaud, e, (const char *)me);
       } else {
         // No error, but is the responded value correct?
         uint16_t mySize = 0;
         ret.get(2, mySize);
         if (mySize != 162) {
           // No, report it.
-          LOG_N("Baud test failed at %u (size %u != 162)\n", myBaud, mySize);
+          log_w("Baud test failed at %u (size %u != 162)", myBaud, mySize);
         } else {
           testsPassed++;
         }
@@ -1656,7 +1654,7 @@ void setup()
     // Print summary. We will have to wait a bit to get all test cases executed!
     WAIT_FOR_FINISH(RTUclient)
 
-    Serial.printf("----->    RTU tests: %4d, passed: %4d\n", testsExecuted, testsPassed);
+    Serial.printf("----->    RTU tests: %4d, passed: %4d", testsExecuted, testsPassed);
   
   }
 
@@ -1678,14 +1676,6 @@ void setup()
   // Start ModbusClientTCP background task
   TestClientWiFi.begin();
   TestClientWiFi.setTarget(ip, port, 500, 0);
-
-  // Define and start TCP server
-  MBserver.registerWorker(1, READ_HOLD_REGISTER, &FC03);      // FC=03 for serverID=1
-  MBserver.registerWorker(1, READ_INPUT_REGISTER, &FC03);     // FC=04 for serverID=1
-  MBserver.registerWorker(1, WRITE_HOLD_REGISTER, &FC06);     // FC=06 for serverID=1
-  MBserver.registerWorker(2, READ_HOLD_REGISTER, &FC03);      // FC=03 for serverID=2
-  MBserver.registerWorker(2, USER_DEFINED_41, &FC41);         // FC=41 for serverID=2
-  MBserver.registerWorker(2, ANY_FUNCTION_CODE, &FCany);      // FC=41 for serverID=2
 
   // Set up test memory
   for (uint16_t i = 0; i < 32; ++i) {
@@ -1890,7 +1880,7 @@ void setup()
 
   // Print summary. We will have to wait a bit to get all test cases executed!
   WAIT_FOR_FINISH(RTUclient)
-  Serial.printf("----->    TCP WiFi loopback tests: %4d, passed: %4d\n", testsExecuted, testsPassed);
+  Serial.printf("----->    TCP WiFi loopback tests: %4d, passed: %4d", testsExecuted, testsPassed);
 
   // ******************************************************************************
   // Tests for synchronous requests
@@ -1904,7 +1894,7 @@ void setup()
   ModbusMessage n, m;
 
   if (chkFailed) {
-    Serial.printf("Synchronous RTU tests skipped\n");
+    Serial.printf("Synchronous RTU tests skipped");
   } else {
     m.setMessage(1, READ_HOLD_REGISTER, 1, 4);
     n = RTUclient.syncRequest(m, Token++);
@@ -1931,7 +1921,7 @@ void setup()
   testOutput("Sync request address/words invalid (WiFi)", LNO(__LINE__), makeVector("02 83 E7"), n);
 
   // Print summary.
-  Serial.printf("----->    Synchronous request tests: %4d, passed: %4d\n", testsExecuted, testsPassed);
+  Serial.printf("----->    Synchronous request tests: %4d, passed: %4d", testsExecuted, testsPassed);
 
   // ******************************************************************************
   // Bridge tests
@@ -1969,7 +1959,7 @@ void setup()
   testOutput("FC not supported by bridge", LNO(__LINE__), makeVector("04 84 01"), n);
 
   if (chkFailed) {
-    Serial.printf("Bridge RTU tests skipped\n");
+    Serial.printf("Bridge RTU tests skipped");
   } else {
     MBUlogLvl = LOG_LEVEL_ERROR;
     Bridge.attachServer(2, 1, READ_HOLD_REGISTER, &RTUclient);
@@ -1987,7 +1977,7 @@ void setup()
   }
 
   // Print summary.
-  Serial.printf("----->    Bridge tests: %4d, passed: %4d\n", testsExecuted, testsPassed);
+  Serial.printf("----->    Bridge tests: %4d, passed: %4d", testsExecuted, testsPassed);
 
 // ******************************************************************************
 // CoilData type tests
@@ -2153,32 +2143,32 @@ void setup()
   if (coils4 == "1101010111 plus some garbage trailing") {
     okay++;
   } else {
-    Serial.print(LNO(__LINE__) "Compare #1 failed\n");
+    Serial.print(LNO(__LINE__) "Compare #1 failed");
   }
   if (coils4 != "110101 1 0111") {
     okay++;
   } else {
-    Serial.print(LNO(__LINE_) "Compare #2 failed\n");
+    Serial.print(LNO(__LINE_) "Compare #2 failed");
   }
   if (coils4 == "1101010111_1") {
     okay++;
   } else {
-    Serial.print(LNO(__LINE__) "Compare #3 failed\n");
+    Serial.print(LNO(__LINE__) "Compare #3 failed");
   }
   if (coils4 != "11010101111") {
     okay++;
   } else {
-    Serial.print(LNO(__LINE__) "Compare #4 failed\n");
+    Serial.print(LNO(__LINE__) "Compare #4 failed");
   }
   if (coils4.slice(0, 3) == "110") {
     okay++;
   } else {
-    Serial.print(LNO(__LINE__) "Compare #5 failed\n");
+    Serial.print(LNO(__LINE__) "Compare #5 failed");
   }
   if (okay == 5) testsPassed++;
 
   // Print summary.
-  Serial.printf("----->    CoilData tests: %4d, passed: %4d\n", testsExecuted, testsPassed);
+  Serial.printf("----->    CoilData tests: %4d, passed: %4d", testsExecuted, testsPassed);
 
   // ******************************************************************************
   // FC redefinition tests
@@ -2193,7 +2183,7 @@ void setup()
   if (ft == FC01_TYPE) {
     testsPassed++;
   } else {
-    Serial.print(LNO(__LINE__) "FC redefinition #1 failed\n");
+    Serial.print(LNO(__LINE__) "FC redefinition #1 failed");
   }
 
   // #2 - try redefining an undefined function code
@@ -2202,7 +2192,7 @@ void setup()
   if (ft == FC01_TYPE) {
     testsPassed++;
   } else {
-    Serial.print(LNO(__LINE__) "FC redefinition #2 failed\n");
+    Serial.print(LNO(__LINE__) "FC redefinition #2 failed");
   }
 
   // #3 - use redefined function code
@@ -2212,56 +2202,16 @@ void setup()
   MSG04(1, 0x55, 0x1020, 125, 4711,    LNO(__LINE__) "wrong call parameter 0x55 (4711)",  "01 D5 E6");
 
   // Print summary.
-  Serial.printf("----->    FC redefiniton: %4d, passed: %4d\n", testsExecuted, testsPassed);
+  Serial.printf("----->    FC redefiniton: %4d, passed: %4d", testsExecuted, testsPassed);
 
   // ******************************************************************************
   // Counter tests
   // ******************************************************************************
-  Serial.printf("RTUserver: %d messages, %d errors.\n", RTUserver.getMessageCount(), RTUserver.getErrorCount());
-  Serial.printf("RTUclient: %d messages, %d errors.\n", RTUclient.getMessageCount(), RTUclient.getErrorCount());
-  Serial.printf("MBserver: %d messages, %d errors.\n", MBserver.getMessageCount(), MBserver.getErrorCount());
-  Serial.printf("Bridge: %d messages, %d errors.\n", Bridge.getMessageCount(), Bridge.getErrorCount());
-
-/*
-  // ******************************************************************************
-  // Logging tests
-  // ******************************************************************************
-
-  Serial.printf("\n\n\n\nSome logging test output - please check yourself!\n");
-
-  MBUlogLvl = LOG_LEVEL_VERBOSE;
-  LOG_N("If you see this, Logging is working on a user-defined LOGDEVICE.\n");
-  LOG_N("Following shall be a Test dump, then 6 pairs of output for different log levels.\n\n");
-  HEXDUMP_N("Test data", (uint8_t *)&words, 10);
-
-  Serial.println();
-  LOG_C("\nCritical log message\n");
-  HEXDUMP_C("Critical dump", (uint8_t *)&words, 10);
-
-  Serial.println();
-  LOG_E("\nError log message\n");
-  HEXDUMP_E("Error dump", (uint8_t *)&words, 10);
-
-  Serial.println();
-  LOG_W("\nWarning log message\n");
-  HEXDUMP_W("Warning dump", (uint8_t *)&words, 10);
-
-  Serial.println();
-  LOG_I("\nInformational log message\n");
-  HEXDUMP_I("Info dump", (uint8_t *)&words, 10);
-
-  Serial.println();
-  LOG_D("\nDebug log message\n");
-  HEXDUMP_D("Debug dump", (uint8_t *)&words, 10);
-
-  Serial.println();
-  LOG_V("\nVerbose log message\n");
-  HEXDUMP_V("Verbose dump data", (uint8_t *)&words, 10);
-  */
+  Serial.printf("RTUclient: %d messages, %d errors.", RTUclient.getMessageCount(), RTUclient.getErrorCount());
 
   // ======================================================================================
   // Final message
-  Serial.println("\n\n *** ----> All finished.");
+  Serial.println(" *** ----> All finished.");
 
 }
 

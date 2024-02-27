@@ -26,8 +26,8 @@ void handleData(ModbusMessage response, uint32_t token)
 {
   // Only print out result of the "real" example - not the request preparing the field
   if (token > 1111) {
-    LOG_N("Response: serverID=%d, FC=%d, Token=%08X, length=%d:\n", response.getServerID(), response.getFunctionCode(), token, response.size());
-    HEXDUMP_N("Data", response.data(), response.size());
+    log_v("Response: serverID=%d, FC=%d, Token=%08X, length=%d:", response.getServerID(), response.getFunctionCode(), token, response.size());
+    log_buf_v("Data", response.data(), response.size());
   }
 }
 
@@ -37,7 +37,7 @@ void handleError(Error error, uint32_t token)
 {
   // ModbusError wraps the error code and provides a readable error message for it
   ModbusError me(error);
-  LOG_E("Error response: %02X - %s\n", (int)me, (const char *)me);
+  log_e("Error response: %02X - %s", (int)me, (const char *)me);
 }
 
 // Setup() - initialization happens here
@@ -72,7 +72,7 @@ void setup() {
   Error err = MB.addRequest(Token++, 1, WRITE_HOLD_REGISTER, 10, 0x1234);
   if (err!=SUCCESS) {
     ModbusError e(err);
-    LOG_E("Error creating request: %02X - %s\n", (int)e, (const char *)e);
+    log_e("Error creating request: %02X - %s", (int)e, (const char *)e);
   }
 
 // Create request by
@@ -90,28 +90,28 @@ void setup() {
   err = MB.addRequest(Token++, 1, READ_HOLD_REGISTER, 10, 1);
   if (err!=SUCCESS) {
     ModbusError e(err);
-    LOG_E("Error creating request: %02X - %s\n", (int)e, (const char *)e);
+    log_e("Error creating request: %02X - %s", (int)e, (const char *)e);
   }
 
 // Now write 0xBEEF to it
   err = MB.addRequest(Token++, 1, WRITE_HOLD_REGISTER, 10, 0xBEEF);
   if (err!=SUCCESS) {
     ModbusError e(err);
-    LOG_E("Error creating request: %02X - %s\n", (int)e, (const char *)e);
+    log_e("Error creating request: %02X - %s", (int)e, (const char *)e);
   }
 
 // Read it again to verify
   err = MB.addRequest(Token++, 1, READ_HOLD_REGISTER, 10, 1);
   if (err!=SUCCESS) {
     ModbusError e(err);
-    LOG_E("Error creating request: %02X - %s\n", (int)e, (const char *)e);
+    log_e("Error creating request: %02X - %s", (int)e, (const char *)e);
   }
 
 // Provoke an error just to show it
   err = MB.addRequest(Token++, 1, USER_DEFINED_44, 10, 1);
   if (err!=SUCCESS) {
     ModbusError e(err);
-    LOG_E("Error creating request: %02X - %s\n", (int)e, (const char *)e);
+    log_e("Error creating request: %02X - %s", (int)e, (const char *)e);
   }
 
 // The output on the Serial Monitor will be (depending on your Modbus the data will be different):

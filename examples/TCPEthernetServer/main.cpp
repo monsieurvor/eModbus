@@ -66,7 +66,7 @@ void WizReset() {
   delay(50);
   digitalWrite(RESET_P, HIGH);
   delay(350);
-  Serial.print("Done.\n");
+  Serial.print("Done.");
 }
 
 // Setup() - initialization happens here
@@ -87,13 +87,13 @@ void setup()
   // Try to get an IP via DHCP
   if (Ethernet.begin(mac) == 0) {
     // No. DHCP did not work.
-    Serial.print("Failed to configure Ethernet using DHCP\n");
+    Serial.print("Failed to configure Ethernet using DHCP");
     // Check for Ethernet hardware present
     if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-      Serial.print("Ethernet shield was not found.  Sorry, can't run without hardware. :(\n");
+      Serial.print("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
     } else {
       if (Ethernet.linkStatus() == LinkOFF) {
-        Serial.print("Ethernet cable is not connected.\n");
+        Serial.print("Ethernet cable is not connected.");
       }
     }
     while (1) {}  // Do nothing any more
@@ -101,7 +101,7 @@ void setup()
 
   // We seem to have a connection to the router
   lIP = Ethernet.localIP();
-  Serial.printf("My IP address: %u.%u.%u.%u\n", lIP[0], lIP[1], lIP[2], lIP[3]);
+  Serial.printf("My IP address: %u.%u.%u.%u", lIP[0], lIP[1], lIP[2], lIP[3]);
 
   // Set up test memory
   for (uint16_t i = 0; i < 32; ++i)
@@ -126,6 +126,6 @@ void loop()
   if (millis() - lastMillis > 5000)
   {
     lastMillis = millis();
-    Serial.printf("Millis: %10d - free heap: %d\n", lastMillis, ESP.getFreeHeap());
+    Serial.printf("Millis: %10d - free heap: %d", lastMillis, ESP.getFreeHeap());
   }
 }

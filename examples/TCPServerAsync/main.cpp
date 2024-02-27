@@ -72,7 +72,7 @@ void setup() {
     delay(500);
   }
   IPAddress wIP = WiFi.localIP();
-  Serial.printf("WIFi IP address: %u.%u.%u.%u\n", wIP[0], wIP[1], wIP[2], wIP[3]);
+  Serial.printf("WIFi IP address: %u.%u.%u.%u", wIP[0], wIP[1], wIP[2], wIP[3]);
 
 // Set up test memory
   for (uint16_t i = 0; i < 32; ++i) {
@@ -91,6 +91,6 @@ void loop() {
   static unsigned long lastMillis = 0;
   if (millis() - lastMillis > 10000) {
     lastMillis = millis();
-    Serial.printf("free heap: %d\n", ESP.getFreeHeap());
+    Serial.printf("free heap: %d", ESP.getFreeHeap());
   }
 }

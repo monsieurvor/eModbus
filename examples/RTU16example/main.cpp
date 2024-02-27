@@ -21,7 +21,7 @@ ModbusClientRTU MB;
 // plus a user-supplied token to identify the causing request
 void handleData(ModbusMessage response, uint32_t token) 
 {
-  Serial.printf("Response: serverID=%d, FC=%d, Token=%08X, length=%d:\n", response.getServerID(), response.getFunctionCode(), token, response.size());
+  Serial.printf("Response: serverID=%d, FC=%d, Token=%08X, length=%d:", response.getServerID(), response.getFunctionCode(), token, response.size());
   for (auto& byte : response) {
     Serial.printf("%02X ", byte);
   }
@@ -34,7 +34,7 @@ void handleError(Error error, uint32_t token)
 {
   // ModbusError wraps the error code and provides a readable error message for it
   ModbusError me(error);
-  Serial.printf("Error response: %02X - %s\n", (int)me, (const char *)me);
+  Serial.printf("Error response: %02X - %s", (int)me, (const char *)me);
 }
 
 // Setup() - initialization happens here
@@ -76,7 +76,7 @@ void setup() {
   Error err = MB.addRequest(Token++, 1, READ_HOLD_REGISTER, 33, 6);
   if (err!=SUCCESS) {
     ModbusError e(err);
-    Serial.printf("Error creating request: %02X - %s\n", (int)e, (const char *)e);
+    Serial.printf("Error creating request: %02X - %s", (int)e, (const char *)e);
   }
 
 // Create request for
@@ -93,7 +93,7 @@ void setup() {
   err = MB.addRequest(Token++, 1, WRITE_MULT_REGISTERS, 33, 6, 12, wData);
   if (err!=SUCCESS) {
     ModbusError e(err);
-    Serial.printf("Error creating request: %02X - %s\n", (int)e, (const char *)e);
+    Serial.printf("Error creating request: %02X - %s", (int)e, (const char *)e);
   }
 
 // Create request for
@@ -107,7 +107,7 @@ void setup() {
   err = MB.addRequest(Token++, 1, READ_HOLD_REGISTER, 33, 6);
   if (err!=SUCCESS) {
     ModbusError e(err);
-    Serial.printf("Error creating request: %02X - %s\n", (int)e, (const char *)e);
+    Serial.printf("Error creating request: %02X - %s", (int)e, (const char *)e);
   }
 
 // The output on the Serial Monitor will be (depending on your Modbus the data will be different):

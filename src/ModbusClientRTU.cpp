@@ -6,8 +6,6 @@
 
 #if HAS_FREERTOS
 
-#undef LOCAL_LOG_LEVEL
-// #define LOCAL_LOG_LEVEL LOG_LEVEL_VERBOSE
 #include "Logging.h"
 
 // Constructor takes an optional DE/RE pin and queue size
@@ -83,7 +81,7 @@ void ModbusClientRTU::doBegin(uint32_t baudRate, int coreID) {
   // Start task to handle the queue
   xTaskCreatePinnedToCore((TaskFunction_t)&handleConnection, taskName, CLIENT_TASK_STACK, this, 6, &worker, coreID >= 0 ? coreID : NULL);
 
-  LOG_D("Client task %d started. Interval=%d\n", (uint32_t)worker, MR_interval);
+  log_d("Client task %d started. Interval=%d", (uint32_t)worker, MR_interval);
 }
 
 // end: stop worker task
@@ -101,7 +99,7 @@ void ModbusClientRTU::end() {
     }
     // Kill task
     vTaskDelete(worker);
-    LOG_D("Client task %d killed.\n", (uint32_t)worker);
+    log_d("Client task %d killed.", (uint32_t)worker);
     worker = nullptr;
   }
 }
@@ -109,20 +107,20 @@ void ModbusClientRTU::end() {
 // setTimeOut: set/change the default interface timeout
 void ModbusClientRTU::setTimeout(uint32_t TOV) {
   MR_timeoutValue = TOV;
-  LOG_D("Timeout set to %d\n", TOV);
+  log_d("Timeout set to %d", TOV);
 }
 
 // Toggle protocol to ModbusASCII
 void ModbusClientRTU::useModbusASCII(unsigned long timeout) {
   MR_useASCII = true;
   MR_timeoutValue = timeout; // Switch timeout to ASCII's value
-  LOG_D("Protocol mode: ASCII\n");
+  log_d("Protocol mode: ASCII");
 }
 
 // Toggle protocol to ModbusRTU
 void ModbusClientRTU::useModbusRTU() {
   MR_useASCII = false;
-  LOG_D("Protocol mode: RTU\n");
+  log_d("Protocol mode: RTU");
 }
 
 // Inquire protocol mode
@@ -133,7 +131,7 @@ bool ModbusClientRTU::isModbusASCII() {
 // Toggle skipping of leading 0x00 byte
 void ModbusClientRTU::skipLeading0x00(bool onOff) {
   MR_skipLeadingZeroByte = onOff;
-  LOG_D("Skip leading 0x00 mode = %s\n", onOff ? "ON" : "OFF");
+  log_d("Skip leading 0x00 mode = %s", onOff ? "ON" : "OFF");
 }
 
 // Return number of unprocessed requests in queue
@@ -153,7 +151,7 @@ void ModbusClientRTU::clearQueue()
 Error ModbusClientRTU::addRequestM(ModbusMessage msg, uint32_t token) {
   Error rc = SUCCESS;        // Return value
 
-  LOG_D("request for %02X/%02X\n", msg.getServerID(), msg.getFunctionCode());
+  log_d("request for %02X/%02X", msg.getServerID(), msg.getFunctionCode());
 
   // Add it to the queue, if valid
   if (msg) {
@@ -164,7 +162,7 @@ Error ModbusClientRTU::addRequestM(ModbusMessage msg, uint32_t token) {
     }
   }
 
-  LOG_D("RC=%02X\n", rc);
+  log_d("RC=%02X", rc);
   return rc;
 }
 
@@ -191,7 +189,7 @@ ModbusMessage ModbusClientRTU::syncRequestM(ModbusMessage msg, uint32_t token) {
 Error ModbusClientRTU::addBroadcastMessage(const uint8_t *data, uint8_t len) {
   Error rc = SUCCESS;        // Return value
 
-  LOG_D("Broadcast request of length %d\n", len);
+  log_d("Broadcast request of length %d", len);
 
   // We do only accept requests with data, 0 byte, data and CRC must fit into 256 bytes.
   if (len && len < 254) {
@@ -213,7 +211,7 @@ Error ModbusClientRTU::addBroadcastMessage(const uint8_t *data, uint8_t len) {
     rc =  BROADCAST_ERROR;
   }
 
-  LOG_D("RC=%02X\n", rc);
+  log_d("RC=%02X", rc);
   return rc;
 }
 
@@ -236,7 +234,7 @@ bool ModbusClientRTU::addToQueue(uint32_t token, ModbusMessage request, bool syn
     }
   }
 
-  LOG_D("RC=%02X\n", rc);
+  log_d("RC=%02X", rc);
   return rc;
 }
 
@@ -254,13 +252,13 @@ void ModbusClientRTU::handleConnection(ModbusClientRTU *instance) {
       // Yes. pull it.
       RequestEntry request = instance->requests.front();
 
-      LOG_D("Pulled request from queue\n");
+      log_d("Pulled request from queue");
 
       // Send it via Serial
       RTUutils::send(*(instance->MR_serial), instance->MR_lastMicros, instance->MR_interval, instance->MTRSrts, request.msg, instance->MR_useASCII);
 
-      LOG_D("Request sent.\n");
-      // HEXDUMP_V("Data", request.msg.data(), request.msg.size());
+      log_d("Request sent.");
+      // log_buf_v("Data", request.msg.data(), request.msg.size());
 
       // For a broadcast, we will not wait for a response
       if (request.msg.getServerID() != 0 || ((request.token & 0xFF000000) != 0xBC000000)) {
@@ -274,8 +272,8 @@ void ModbusClientRTU::handleConnection(ModbusClientRTU *instance) {
           instance->MR_useASCII,
           instance->MR_skipLeadingZeroByte);
   
-        LOG_D("%s response (%d bytes) received.\n", response.size()>1 ? "Data" : "Error", response.size());
-        HEXDUMP_V("Data", response.data(), response.size());
+        log_d("%s response (%d bytes) received.", response.size()>1 ? "Data" : "Error", response.size());
+        log_buf_v("Data", response.data(), response.size());
   
         // No error in receive()?
         if (response.size() > 1) {
@@ -295,8 +293,8 @@ void ModbusClientRTU::handleConnection(ModbusClientRTU *instance) {
           response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), static_cast<Error>(response[0]));
         }
   
-        LOG_D("Response generated.\n");
-        HEXDUMP_V("Response packet", response.data(), response.size());
+        log_d("Response generated.");
+        log_buf_v("Response packet", response.data(), response.size());
 
         // If we got an error, count it
         if (response.getError() != SUCCESS) {

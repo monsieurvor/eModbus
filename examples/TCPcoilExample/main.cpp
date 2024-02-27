@@ -146,7 +146,7 @@ void setup() {
     delay(1000);
   }
   IPAddress wIP = WiFi.localIP();
-  Serial.printf("WIFi IP address: %u.%u.%u.%u\n", wIP[0], wIP[1], wIP[2], wIP[3]);
+  Serial.printf("WIFi IP address: %u.%u.%u.%u", wIP[0], wIP[1], wIP[2], wIP[3]);
 
 // Register function codes/server IDs the server shall react on
   MB.registerWorker(1, READ_COIL, FC_01);
@@ -191,7 +191,7 @@ void setup() {
     cd.print("Received                          : ", Serial);
   } else {
     ModbusError me(err);
-    Serial.printf("Error reading coils: %02d - %s\n", err, (const char *)me);
+    Serial.printf("Error reading coils: %02d - %s", err, (const char *)me);
   }
 
 // next set a single coil at 8
@@ -203,7 +203,7 @@ void setup() {
     myCoils.print("   Coil 8 set to 1: ", Serial);
   } else {
     ModbusError me(err);
-    Serial.printf("Error  writing single coil: %02d - %s\n", err, (const char *)me);
+    Serial.printf("Error  writing single coil: %02d - %s", err, (const char *)me);
   }
 
 // Finally set a a bunch of coils starting at 20
@@ -216,7 +216,7 @@ void setup() {
     myCoils.print("Block of coils set: ", Serial);
   } else {
     ModbusError me(err);
-    Serial.printf("Error writing block of coils: %02d - %s\n", err, (const char *)me);
+    Serial.printf("Error writing block of coils: %02d - %s", err, (const char *)me);
   }
 
   // Your output on the Serial monitor should look similar to:

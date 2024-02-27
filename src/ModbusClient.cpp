@@ -3,7 +3,6 @@
 //               MIT license - see license.md for details
 // =================================================================================================
 #include "ModbusClient.h"
-#undef LOCAL_LOG_LEVEL
 #include "Logging.h"
 
 uint16_t ModbusClient::instanceCounter = 0;
@@ -24,9 +23,9 @@ ModbusClient::ModbusClient() :
 // onDataHandler: register callback for data responses
 bool ModbusClient::onDataHandler(MBOnData handler) {
   if (onData) {
-    LOG_W("onData handler was already claimed\n");
+    log_w("onData handler was already claimed");
   } else if (onResponse) {
-    LOG_E("onData handler is unavailable with an onResponse handler\n");
+    log_e("onData handler is unavailable with an onResponse handler");
     return false;
   }
   onData = handler;
@@ -36,9 +35,9 @@ bool ModbusClient::onDataHandler(MBOnData handler) {
 // onErrorHandler: register callback for error responses
 bool ModbusClient::onErrorHandler(MBOnError handler) {
   if (onError) {
-    LOG_W("onError handler was already claimed\n");
+    log_w("onError handler was already claimed");
   } else if (onResponse) {
-    LOG_E("onError handler is unavailable with an onResponse handler\n");
+    log_e("onError handler is unavailable with an onResponse handler");
     return false;
   } 
   onError = handler;
@@ -48,7 +47,7 @@ bool ModbusClient::onErrorHandler(MBOnError handler) {
 // onResponseHandler: register callback for error responses
 bool ModbusClient::onResponseHandler(MBOnResponse handler) {
   if (onError || onData) {
-    LOG_E("onResponse handler is unavailable with an onData or onError handler\n");
+    log_e("onResponse handler is unavailable with an onData or onError handler");
     return false;
   } 
   onResponse = handler;

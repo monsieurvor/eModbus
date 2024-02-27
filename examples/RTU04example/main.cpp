@@ -54,7 +54,7 @@ void handleError(Error error, uint32_t token)
 {
   // ModbusError wraps the error code and provides a readable error message for it
   ModbusError me(error);
-  LOG_E("Error response: %02X - %s\n", (int)me, (const char *)me);
+  log_e("Error response: %02X - %s", (int)me, (const char *)me);
 }
 
 // Setup() - initialization happens here
@@ -91,7 +91,7 @@ void loop() {
     Error err = MB.addRequest((uint32_t)millis(), 1, READ_INPUT_REGISTER, FIRST_REGISTER, NUM_VALUES * 2);
     if (err!=SUCCESS) {
       ModbusError e(err);
-      LOG_E("Error creating request: %02X - %s\n", (int)e, (const char *)e);
+      log_e("Error creating request: %02X - %s", (int)e, (const char *)e);
     }
     // Save current time to check for next cycle
     next_request = millis();
@@ -99,11 +99,11 @@ void loop() {
     // No, but we may have another response
     if (data_ready) {
       // We do. Print out the data
-      Serial.printf("Requested at %8.3fs:\n", request_time / 1000.0);
+      Serial.printf("Requested at %8.3fs:", request_time / 1000.0);
       for (uint8_t i = 0; i < NUM_VALUES; ++i) {
-        Serial.printf("   %04X: %8.3f\n", i * 2 + FIRST_REGISTER, values[i]);
+        Serial.printf("   %04X: %8.3f", i * 2 + FIRST_REGISTER, values[i]);
       }
-      Serial.printf("----------\n\n");
+      Serial.printf("----------");
       data_ready = false;
     }
   }

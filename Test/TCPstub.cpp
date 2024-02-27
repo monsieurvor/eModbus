@@ -216,7 +216,7 @@ void TCPstub::workerTask(TCPstub *instance) {
         // Does the test case prescribe an initial delay?
         if (myTest->delayTime) {
           // Yes. idle until time has passed
-          // Serial.printf("Wait for %d\n", myTest->delayTime);
+          // Serial.printf("Wait for %d", myTest->delayTime);
           delay(myTest->delayTime);
         }
         // Do we have to send a response?
@@ -256,7 +256,7 @@ void TCPstub::workerTask(TCPstub *instance) {
           vTaskDelete(NULL);
         }
       } else {
-        Serial.printf("No test case for TID %04X\n", tid);
+        Serial.printf("No test case for TID %04X", tid);
       }
     } else {
       delay(10);

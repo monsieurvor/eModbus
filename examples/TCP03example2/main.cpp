@@ -30,7 +30,7 @@ ModbusClientTCP MB(theClient);
 // plus a user-supplied token to identify the causing request
 void handleData(ModbusMessage response, uint32_t token) 
 {
-  Serial.printf("Response: serverID=%d, FC=%d, Token=%08X, length=%d:\n", response.getServerID(), response.getFunctionCode(), token, response.size());
+  Serial.printf("Response: serverID=%d, FC=%d, Token=%08X, length=%d:", response.getServerID(), response.getFunctionCode(), token, response.size());
   for (auto& byte : response) {
     Serial.printf("%02X ", byte);
   }
@@ -43,7 +43,7 @@ void handleError(Error error, uint32_t token)
 {
   // ModbusError wraps the error code and provides a readable error message for it
   ModbusError me(error);
-  Serial.printf("Error response: %02X - %s\n", (int)me, (const char *)me);
+  Serial.printf("Error response: %02X - %s", (int)me, (const char *)me);
 }
 
 // Reset W5500 module
@@ -56,7 +56,7 @@ void WizReset() {
     delay(50);
     digitalWrite(RESET_P, HIGH);
     delay(350);
-    Serial.print("Done.\n");
+    Serial.print("Done.");
 }
 
 // Setup() - initialization happens here
@@ -74,13 +74,13 @@ void setup() {
   // start the Ethernet connection:
   if (Ethernet.begin(mac) == 0) {
     // No. DHCP did not work.
-    Serial.print("Failed to configure Ethernet using DHCP\n");
+    Serial.print("Failed to configure Ethernet using DHCP");
     // Check for Ethernet hardware present
     if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-      Serial.print("Ethernet shield was not found.  Sorry, can't run without hardware. :(\n");
+      Serial.print("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
     } else {
       if (Ethernet.linkStatus() == LinkOFF) {
-        Serial.print("Ethernet cable is not connected.\n");
+        Serial.print("Ethernet cable is not connected.");
       }
     }
     while (1) {}  // Do nothing any more
@@ -88,7 +88,7 @@ void setup() {
 
   // print local IP address:
   lIP = Ethernet.localIP();
-  Serial.printf("My IP address: %u.%u.%u.%u\n", lIP[0], lIP[1], lIP[2], lIP[3]);
+  Serial.printf("My IP address: %u.%u.%u.%u", lIP[0], lIP[1], lIP[2], lIP[3]);
 
 // Set up ModbusTCP client.
 // - provide onData handler function
@@ -118,7 +118,7 @@ void setup() {
   Error err = MB.addRequest((uint32_t)millis(), 4, READ_HOLD_REGISTER, 2, 6);
   if (err!=SUCCESS) {
     ModbusError e(err);
-    Serial.printf("Error creating request: %02X - %s\n", (int)e, (const char *)e);
+    Serial.printf("Error creating request: %02X - %s", (int)e, (const char *)e);
   }
 
 // Else the request is processed in the background task and the onData/onError handler functions will get the result.

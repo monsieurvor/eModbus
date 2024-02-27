@@ -6,8 +6,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
 
-// Modbus server include
-#include "ModbusServerWiFi.h"
 // Modbus TCP client include
 #include "ModbusClientTCP.h"
 
@@ -19,7 +17,6 @@ WiFiClient wc;
 ModbusClientTCP MB(wc);
 
 // Create server
-ModbusServerWiFi MBserver;
 
 // Server function to handle FC 0x03 and 0x04
 ModbusMessage FC03(ModbusMessage request) {
@@ -65,7 +62,7 @@ void handleData(ModbusMessage rsp, uint32_t token) {
 }
 void handleError(Error err, uint32_t token) {
   // Print out error using color emphasis from internal Logging.h
-  Serial.printf("Response #%d: Error %02X - " LL_RED "%s\n" LL_NORM, token, (uint8_t)err, (const char *)ModbusError(err));
+  Serial.printf("Response #%d: Error %02X - " LL_RED "%s" LL_NORM, token, (uint8_t)err, (const char *)ModbusError(err));
 }
 
 // Setup() - initialization happens here
@@ -77,12 +74,6 @@ void setup() {
 
 // Fake WiFi start to initialize internal loopback
   WiFi.begin("foo", "bar");
-
-// Set up TCP server to react on FCs 0x03 and 0x04
-  MBserver.registerWorker(1, READ_HOLD_REGISTER, &FC03);
-  MBserver.registerWorker(1, READ_INPUT_REGISTER, &FC03);
-// Start server
-  MBserver.start(port, 2, 2000);
 
 // Set up client - register data and error handlers
   MB.onDataHandler(&handleData);
@@ -107,7 +98,7 @@ void loop() {
   if (e != SUCCESS) {
     // Creation of the message failed.
     // Print out error using color emphasis from internal Logging.h
-    Serial.printf("Error %02X - " LL_CYAN "%s\n" LL_NORM, (uint8_t)e, (const char *)ModbusError(e));
+    Serial.printf("Error %02X - " LL_CYAN "%s" LL_NORM, (uint8_t)e, (const char *)ModbusError(e));
   } else {
     // Message was created okay.
     Serial.printf("Request  #%d: ", Token);

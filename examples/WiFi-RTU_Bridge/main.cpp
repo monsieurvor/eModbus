@@ -49,7 +49,7 @@ void setup() {
     delay(1000);
   }
   IPAddress wIP = WiFi.localIP();
-  Serial.printf("IP address: %u.%u.%u.%u\n", wIP[0], wIP[1], wIP[2], wIP[3]);
+  Serial.printf("IP address: %u.%u.%u.%u", wIP[0], wIP[1], wIP[2], wIP[3]);
 
 // Set RTU Modbus message timeout to 2000ms
   MB.setTimeout(2000);
@@ -73,7 +73,7 @@ void setup() {
 // Start the bridge. Port 502, 4 simultaneous clients allowed, 600ms inactivity to disconnect client
   MBbridge.start(port, 4, 600);
 
-  Serial.printf("Use the shown IP and port %d to send requests!\n", port);
+  Serial.printf("Use the shown IP and port %d to send requests!", port);
 
 // Your output on the Serial monitor should start with:
 //      __ OK __

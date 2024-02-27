@@ -14,14 +14,14 @@
 
 // A helper function to print out the messages
 void printMsg(ModbusMessage msg) {
-  Serial.printf("Message size: %d\n", msg.size());
+  Serial.printf("Message size: %d", msg.size());
   for (auto& byte : msg) {
     Serial.printf("%02X ", byte);
   }
   if (msg.getError() != SUCCESS) {
-    Serial.printf("Is an error message: %02d - %s\n", msg.getError(), (const char *)ModbusError(msg.getError()));
+    Serial.printf("Is an error message: %02d - %s", msg.getError(), (const char *)ModbusError(msg.getError()));
   }
-  Serial.println("\n");
+  Serial.println("");
 }
 
 // Setup() - initialization happens here
@@ -57,7 +57,7 @@ void setup() {
   uint16_t word1, word2;
   msg2.get(2, word1);
   msg2.get(4, word2);
-  Serial.printf("%04X %04X\n\n", word2, word1);
+  Serial.printf("%04X %04X", word2, word1);
 
 // Some larger data required for WRITE_MULTIPLE_REGISTER
   uint16_t data[8] = { 11, 22, 33, 44, 55, 66, 77, 88 };
@@ -76,7 +76,7 @@ void setup() {
   double rv2 = 0.0;
   msg4.get(2, rv1);
   msg4.get(6, rv2);
-  Serial.printf("rv1=%.12f, rv2=%.12g\n\n", rv1, rv2);
+  Serial.printf("rv1=%.12f, rv2=%.12g", rv1, rv2);
 
 // Message including float and double values, swapped order
   ModbusMessage msg5(4, USER_DEFINED_42);
@@ -90,7 +90,7 @@ void setup() {
   rv2 = 0.0;
   msg5.get(2, rv1, SWAP_BYTES|SWAP_REGISTERS);
   msg5.get(6, rv2, SWAP_WORDS|SWAP_NIBBLES);
-  Serial.printf("rv1=%.12f, rv2=%.12g\n\n", rv1, rv2);
+  Serial.printf("rv1=%.12f, rv2=%.12g", rv1, rv2);
 
 // Your output should like the following
 //     __ OK __

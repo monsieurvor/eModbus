@@ -18,19 +18,19 @@ int main(int argc, char **argv) {
   uint16_t words = 8;
 
   if (argc != 4) {
-    printf("Usage: %s target address numRegisters\n", argv[0]);
+    printf("Usage: %s target address numRegisters", argv[0]);
     return -1;
   }
 
   if (int rc = parseTarget(argv[1], targetIP, targetPort, targetSID)) {
-    printf("Invalid target descriptor. Must be IP[:port[:serverID]] or hostname[:port[:serverID]]\n");
+    printf("Invalid target descriptor. Must be IP[:port[:serverID]] or hostname[:port[:serverID]]");
     return -1;
   }
 
   addr = atoi(argv[2]) & 0xFFFF;
   words = atoi(argv[3]) & 0xFFFF;
 
-  printf("Using %s:%u:%u @%u/%u\n", string(targetIP).c_str(), targetPort, targetSID, addr, words);
+  printf("Using %s:%u:%u @%u/%u", string(targetIP).c_str(), targetPort, targetSID, addr, words);
 
   // Disable Nagle algorithm
   cl.setNoDelay(true);
@@ -58,9 +58,9 @@ int main(int argc, char **argv) {
   Error err = response.getError();
   if (err != SUCCESS) {
     ModbusError e(err);
-    printf("Error creating request: %02X - %s\n", (int)e, (const char *)e);
+    log_w("Error creating request: %02X - %s", (int)e, (const char *)e);
   } else {
-    HEXDUMP_N("Response", response.data(), response.size());
+    log_buf_w("Response", response.data(), response.size());
   }
 
   return 0;
