@@ -201,7 +201,7 @@ bool ModbusClientTCP::addToQueue(uint32_t token, ModbusMessage request, TargetHo
   bool rc = false;
   // Did we get one?
   log_d("Queue size: %d", (uint32_t)requests.size());
-  log_buf_d("Enqueue", request.data(), request.size());
+  log_buf_d(request.data(), request.size());
   if (request) {
     if (requests.size()<MT_qLimit) {
       RequestEntry *re = new RequestEntry(token, request, target, syncReq);
@@ -368,7 +368,7 @@ void ModbusClientTCP::send(RequestEntry *request) {
   MT_client.write(m.data(), m.size());
   // Done. Are we?
   MT_client.flush();
-  log_buf_v("Request packet", m.data(), m.size());
+  log_buf_v(m.data(), m.size());
 }
 
 // receive: get response via Client connection
@@ -398,7 +398,7 @@ ModbusMessage ModbusClientTCP::receive(RequestEntry *request) {
   // Did we get some data?
   if (hadData) {
     log_d("Received response.");
-    log_buf_v("Response packet", data, dataPtr);
+    log_buf_v(data, dataPtr);
     // Yes. check it for validity
     // First transactionID and protocolID shall be identical, length has to match the remainder.
     ModbusTCPhead head(request->head.transactionID, request->head.protocolID, dataPtr - 6);

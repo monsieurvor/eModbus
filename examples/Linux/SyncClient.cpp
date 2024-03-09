@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     ModbusError e(err);
     log_w("Error creating request: %02X - %s", (int)e, (const char *)e);
   } else {
-    log_buf_w("Response", response.data(), response.size());
+    log_buf_w(response.data(), response.size());
   }
 
   return 0;

@@ -87,7 +87,7 @@ bool Client::disconnect() {
     auto lastCall = millis();
   // ...but for 2s only
     while ((millis() - lastCall < 2000) && (sz = ::recv(sockfd, buf, BUFLEN, MSG_DONTWAIT)) > 0) {
-      log_buf_d("Read", buf, sz);
+      log_buf_d(buf, sz);
     }
   // Close socket
     ::close(sockfd);

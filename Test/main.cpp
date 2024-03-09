@@ -145,7 +145,7 @@ ModbusMessage FC41(ModbusMessage request) {
 
 // Worker function for broadcast requests
 void BroadcastWorker(ModbusMessage request) {
-  log_buf_d("Broadcast caught", request.data(), request.size());
+  log_buf_d(request.data(), request.size());
   // Count broadcasts
   broadcastCnt++;
 }

@@ -27,7 +27,7 @@ void handleData(ModbusMessage response, uint32_t token)
   // Only print out result of the "real" example - not the request preparing the field
   if (token > 1111) {
     log_v("Response: serverID=%d, FC=%d, Token=%08X, length=%d:", response.getServerID(), response.getFunctionCode(), token, response.size());
-    log_buf_v("Data", response.data(), response.size());
+    log_buf_v(response.data(), response.size());
   }
 }
 

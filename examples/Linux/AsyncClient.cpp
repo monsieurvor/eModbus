@@ -11,7 +11,7 @@ void handleData(ModbusMessage response, uint32_t token) {
     response.getFunctionCode(), 
     response.getServerID(), 
     response.size());
-  log_buf_v("Data dump", response.data(), response.size());
+  log_buf_v(response.data(), response.size());
   gotIt = true;
 }
 

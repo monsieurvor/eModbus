@@ -168,7 +168,7 @@ void RTUutils::send(Stream& serial, unsigned long& lastMicros, uint32_t interval
     rts(LOW);
   }
 
-  log_buf_d("Sent packet", data, len);
+  log_buf_d(data, len);
 
   // Mark end-of-message time for next interval
   lastMicros = micros();
@@ -268,7 +268,7 @@ ModbusMessage RTUutils::receive(uint8_t caller, Stream& serial, uint32_t timeout
       case DATA_READ:
         // Did we get a sensible buffer length?
         log_v("%c/", (const char)caller);
-        log_buf_v("Raw buffer received", buffer, bufferPtr);
+        log_buf_v(buffer, bufferPtr);
         if (bufferPtr >= 4)
         {
           // Yes. Check CRC
@@ -389,7 +389,7 @@ ModbusMessage RTUutils::receive(uint8_t caller, Stream& serial, uint32_t timeout
               if (b == 0xF2) {
                 // Lead-out byte 2 received. Transfer buffer to returned message
                 log_v("%c/", (const char)caller);
-                log_buf_v("Raw buffer received", buffer, bufferPtr);
+                log_buf_v(buffer, bufferPtr);
                 // Did we get a sensible buffer length?
                 if (bufferPtr >= 3)
                 {
@@ -433,7 +433,7 @@ ModbusMessage RTUutils::receive(uint8_t caller, Stream& serial, uint32_t timeout
   delete[] buffer;
 
   log_d("%c/", (const char)caller);
-  log_buf_d("Received packet", rv.data(), rv.size());
+  log_buf_d(rv.data(), rv.size());
 
   return rv;
 }

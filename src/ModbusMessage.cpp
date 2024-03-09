@@ -201,7 +201,7 @@ uint8_t ModbusMessage::determineFloatOrder() {
       floatOrder[0] = 0xFF;
       return 0;
     } else {
-      log_buf_v("floatOrder", floatOrder, floatSize);
+      log_buf_v(floatOrder, floatSize);
     }
   }
   return floatSize;
@@ -245,7 +245,7 @@ uint8_t ModbusMessage::determineDoubleOrder() {
       doubleOrder[0] = 0xFF;
       return 0;
     } else {
-      log_buf_v("doubleOrder", doubleOrder, doubleSize);
+      log_buf_v(doubleOrder, doubleSize);
     }
   }
   return doubleSize;
@@ -315,7 +315,7 @@ uint16_t ModbusMessage::add(vector<uint8_t> v) {
 uint16_t ModbusMessage::add(float v, int swapRule) {
   // First check if we need to determine byte order
   log_v("add float, swapRule=%02X", swapRule);
-  log_buf_v("float", (uint8_t *)&v, sizeof(float));
+  log_buf_v((uint8_t *)&v, sizeof(float));
   if (determineFloatOrder()) {
     // If we get here, the floatOrder is known
     float interim = 0;
@@ -325,13 +325,13 @@ uint16_t ModbusMessage::add(float v, int swapRule) {
     for (uint8_t i = 0; i < sizeof(float); ++i) {
       dst[i] = src[floatOrder[i]];
     }
-    log_buf_v("normalized float", (uint8_t *)&interim, sizeof(float));
+    log_buf_v((uint8_t *)&interim, sizeof(float));
     // Do we need to apply a swap rule?
     if (swapRule & 0x0B) {
       // Yes, so do it.
       swapFloat(interim, swapRule & 0x0B);
     }
-    log_buf_v("swapped float", (uint8_t *)&interim, sizeof(float));
+    log_buf_v((uint8_t *)&interim, sizeof(float));
     // Put out the bytes of v in normalized (and swapped) sequence
     for (uint8_t i = 0; i < sizeof(float); ++i) {
       MM_data.push_back(dst[i]);
@@ -344,7 +344,7 @@ uint16_t ModbusMessage::add(float v, int swapRule) {
 uint16_t ModbusMessage::add(double v, int swapRule) {
   // First check if we need to determine byte order
   log_v("add double, swapRule=%02X", swapRule);
-  log_buf_v("double", (uint8_t *)&v, sizeof(double));
+  log_buf_v((uint8_t *)&v, sizeof(double));
   if (determineDoubleOrder()) {
     // If we get here, the doubleOrder is known
     double interim = 0;
@@ -354,13 +354,13 @@ uint16_t ModbusMessage::add(double v, int swapRule) {
     for (uint8_t i = 0; i < sizeof(double); ++i) {
       dst[i] = src[doubleOrder[i]];
     }
-    log_buf_v("normalized double", (uint8_t *)&interim, sizeof(double));
+    log_buf_v((uint8_t *)&interim, sizeof(double));
     // Do we need to apply a swap rule?
     if (swapRule & 0x0F) {
       // Yes, so do it.
       swapDouble(interim, swapRule & 0x0F);
     }
-    log_buf_v("swapped double", (uint8_t *)&interim, sizeof(double));
+    log_buf_v((uint8_t *)&interim, sizeof(double));
     // Put out the bytes of v in normalized (and swapped) sequence
     for (uint8_t i = 0; i < sizeof(double); ++i) {
       MM_data.push_back(dst[i]);
@@ -383,13 +383,13 @@ uint16_t ModbusMessage::get(uint16_t index, float& v, int swapRule) const {
       for (uint8_t i = 0; i < sizeof(float); ++i) {
         bytes[i] = MM_data[index + floatOrder[i]];
       }
-      log_buf_v("got float", (uint8_t *)&v, sizeof(float));
+      log_buf_v((uint8_t *)&v, sizeof(float));
       // Do we need to apply a swap rule?
       if (swapRule & 0x0B) {
         // Yes, so do it.
         swapFloat(v, swapRule & 0x0B);
       }
-      log_buf_v("got float swapped", (uint8_t *)&v, sizeof(float));
+      log_buf_v((uint8_t *)&v, sizeof(float));
       index += sizeof(float);
     }
   }
@@ -408,13 +408,13 @@ uint16_t ModbusMessage::get(uint16_t index, double& v, int swapRule) const {
       for (uint8_t i = 0; i < sizeof(double); ++i) {
         bytes[i] = MM_data[index + doubleOrder[i]];
       }
-      log_buf_v("got double", (uint8_t *)&v, sizeof(double));
+      log_buf_v((uint8_t *)&v, sizeof(double));
       // Do we need to apply a swap rule?
       if (swapRule & 0x0F) {
         // Yes, so do it.
         swapDouble(v, swapRule & 0x0F);
       }
-      log_buf_v("got double swapped", (uint8_t *)&v, sizeof(double));
+      log_buf_v((uint8_t *)&v, sizeof(double));
       index += sizeof(double);
     }
   }

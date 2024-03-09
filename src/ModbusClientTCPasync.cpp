@@ -148,7 +148,7 @@ bool ModbusClientTCPasync::addToQueue(int32_t token, ModbusMessage request, bool
   if (request) {
     LOCK_GUARD(lock1, qLock);
     if (txQueue.size() + rxQueue.size() < MTA_qLimit) {
-      log_buf_v("Enqueue", request.data(), request.size());
+      log_buf_v(request.data(), request.size());
       RequestEntry *re = new RequestEntry(token, request, syncReq);
       if (!re) return false;  //TODO: proper error returning in case allocation fails
       // inject proper transactionID

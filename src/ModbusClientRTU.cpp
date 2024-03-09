@@ -258,7 +258,7 @@ void ModbusClientRTU::handleConnection(ModbusClientRTU *instance) {
       RTUutils::send(*(instance->MR_serial), instance->MR_lastMicros, instance->MR_interval, instance->MTRSrts, request.msg, instance->MR_useASCII);
 
       log_d("Request sent.");
-      // log_buf_v("Data", request.msg.data(), request.msg.size());
+      log_buf_v(request.msg.data(), request.msg.size());
 
       // For a broadcast, we will not wait for a response
       if (request.msg.getServerID() != 0 || ((request.token & 0xFF000000) != 0xBC000000)) {
@@ -273,7 +273,7 @@ void ModbusClientRTU::handleConnection(ModbusClientRTU *instance) {
           instance->MR_skipLeadingZeroByte);
   
         log_d("%s response (%d bytes) received.", response.size()>1 ? "Data" : "Error", response.size());
-        log_buf_v("Data", response.data(), response.size());
+        log_buf_v(response.data(), response.size());
   
         // No error in receive()?
         if (response.size() > 1) {
@@ -294,7 +294,7 @@ void ModbusClientRTU::handleConnection(ModbusClientRTU *instance) {
         }
   
         log_d("Response generated.");
-        log_buf_v("Response packet", response.data(), response.size());
+        log_buf_v(response.data(), response.size());
 
         // If we got an error, count it
         if (response.getError() != SUCCESS) {
