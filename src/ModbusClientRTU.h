@@ -66,6 +66,7 @@ protected:
   struct RequestEntry {
     uint32_t token;
     ModbusMessage msg;
+    MBOnResponse responseHandler;
     bool isSyncRequest;
     RequestEntry(uint32_t t, ModbusMessage m, bool syncReq = false) :
       token(t),

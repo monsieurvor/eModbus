@@ -141,6 +141,7 @@ protected:
   struct RequestEntry {
     uint32_t token;
     ModbusMessage msg;
+    MBOnResponse responseHandler;
     TargetHost target;
     ModbusTCPhead head;
     bool isSyncRequest;
@@ -175,7 +176,7 @@ protected:
   ModbusMessage receive(RequestEntry *request);
 
   void isInstance() { return; }   // make class instantiable
-  queue<RequestEntry *> requests;   // Queue to hold requests to be processed
+  queue<RequestEntry> requests;   // Queue to hold requests to be processed
   #if USE_MUTEX
   mutex qLock;                    // Mutex to protect queue
   #endif

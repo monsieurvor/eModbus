@@ -115,7 +115,7 @@ uint32_t ModbusClientTCP::pendingRequests() {
 
 // Remove all pending request from queue
 void ModbusClientTCP::clearQueue() {
-  std::queue<RequestEntry *> empty;
+  std::queue<RequestEntry> empty;
   LOCK_GUARD(lockGuard, qLock);
   std::swap(requests, empty);
 }
@@ -162,7 +162,7 @@ ModbusMessage ModbusClientTCP::syncRequestM(ModbusMessage msg, uint32_t token) {
 
   if (msg) {
     // Queue add successful?
-    if (!addToQueue(token, msg, MT_target, true)) {
+    if (!addToQueue(token, msg, onResponse, MT_target, true)) {
       // No. Return error after deleting the allocated request.
       response.setError(msg.getServerID(), msg.getFunctionCode(), REQUEST_QUEUE_FULL);
     } else {
@@ -204,10 +204,11 @@ bool ModbusClientTCP::addToQueue(uint32_t token, ModbusMessage request, TargetHo
   log_buf_d(request.data(), request.size());
   if (request) {
     if (requests.size()<MT_qLimit) {
-      RequestEntry *re = new RequestEntry(token, request, target, syncReq);
+      RequestEntry re = RequestEntry(token, request, target, syncReq);
       // inject proper transactionID
-      re->head.transactionID = messageCount++;
-      re->head.len = request.size();
+      re.head.transactionID = messageCount++;
+      re.head.len = request.size();
+      re.responseHandler = onResponseHandler;
       // Safely lock queue and push request to queue
       rc = true;
       LOCK_GUARD(lockGuard, qLock);
@@ -229,7 +230,7 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
     // Do we have a request in queue?
     if (!instance->requests.empty()) {
       // Yes. pull it.
-      RequestEntry *request = instance->requests.front();
+      RequestEntry request = instance->requests.front();
       doNotPop = false;
       log_d("Got request from queue");
 
@@ -238,7 +239,7 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
         // Empty the RX buffer in case there is a stray response left
         while (instance->MT_client.read() != -1) {}
         // check if lastHost/lastPort!=host/port off the queued request
-        if (instance->MT_lastTarget != request->target) {
+        if (instance->MT_lastTarget != request.target) {
           // It is different. Disconnect it.
           instance->MT_client.stop();
           log_d("Target different, disconnect");
@@ -246,15 +247,15 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
         } else {
           // it is the same host/port.
           // Give it some slack to get ready again
-          while (millis() - lastRequest < request->target.interval) { delay(1); }
+          while (millis() - lastRequest < request.target.interval) { delay(1); }
         }
       }
       // if client is disconnected (we will have to switch hosts)
       if (!instance->MT_client.connected()) {
         // Serial.println("Client reconnecting");
         // It is disconnected. connect to host/port from queue
-        instance->MT_client.connect(request->target.host, request->target.port);
-        log_d("Target connect (%d.%d.%d.%d:%d).", request->target.host[0], request->target.host[1], request->target.host[2], request->target.host[3], request->target.port);
+        instance->MT_client.connect(request.target.host, request.target.port);
+        log_d("Target connect (%d.%d.%d.%d:%d).", request.target.host[0], request.target.host[1], request.target.host[2], request.target.host[3], request.target.port);
 
         delay(1);  // Give scheduler room to breathe
       }
@@ -272,20 +273,20 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
         if (response.getError()==SUCCESS) {
           log_d("Data response.");
           // Yes. Is it a synchronous request?
-          if (request->isSyncRequest) {
+          if (request.isSyncRequest) {
             // Yes. Put the response into the response map
             {
               LOCK_GUARD(sL, instance->syncRespM);
-              instance->syncResponse[request->token] = response;
+              instance->syncResponse[request.token] = response;
             }
           // No, async request. Do we have an onResponse handler?
-          } else if (instance->onResponse) {
+          } else if (request.responseHandler) {
             // Yes. Call it.
-            instance->onResponse(response, request->token);
+            request.responseHandler(response, request.token);
           // No, but do we have an onData handler registered?
           } else if (instance->onData) {
             // Yes. call it
-            instance->onData(response, request->token);
+            instance->onData(response, request.token);
           } else {
             log_d("No handler for response!");
           }
@@ -298,44 +299,44 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
             instance->errorCount++;
           }
           // Is it a synchronous request?
-          if (request->isSyncRequest) {
+          if (request.isSyncRequest) {
             // Yes. Put the response into the response map
             {
               LOCK_GUARD(sL, instance->syncRespM);
-              instance->syncResponse[request->token] = response;
+              instance->syncResponse[request.token] = response;
             }
           // No, but do we have an onResponse handler?
-          } else if (instance->onResponse) {
+          } else if (request.responseHandler) {
             // Yes, call it.
-            instance->onResponse(response, request->token);
+            request.responseHandler(response, request.token);
           // No, but do we have an onError handler?
           } else if (instance->onError) {
             // Yes. Forward the error code to it
-            instance->onError(response.getError(), request->token);
+            instance->onError(response.getError(), request.token);
           } else {
             log_d("No onError handler");
           }
         }
         //   set lastHost/lastPort tp host/port
-        instance->MT_lastTarget = request->target;
+        instance->MT_lastTarget = request.target;
       } else {
         // Oops. Connection failed
-        response.setError(request->msg.getServerID(), request->msg.getFunctionCode(), IP_CONNECTION_FAILED);
+        response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), IP_CONNECTION_FAILED);
         // Is it a synchronous request?
-        if (request->isSyncRequest) {
+        if (request.isSyncRequest) {
           // Yes. Put the response into the response map
           {
             LOCK_GUARD(sL, instance->syncRespM);
-            instance->syncResponse[request->token] = response;
+            instance->syncResponse[request.token] = response;
           }
         // No, but do we have an onResponse handler?
         } else if (instance->onResponse) {
           // Yes, call it.
-          instance->onResponse(response, request->token);
+          instance->onResponse(response, request.token);
         // Finally, do we have an onError handler?
         } else if (instance->onError) {
           // Yes. Forward the error code to it
-          instance->onError(IP_CONNECTION_FAILED, request->token);
+          instance->onError(IP_CONNECTION_FAILED, request.token);
         }
       }
       // Clean-up time. 
@@ -345,8 +346,6 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
         LOCK_GUARD(lockGuard, instance->qLock);
         // Remove the front queue entry
         instance->requests.pop();
-        // Delete request
-        delete request;
         log_d("Request popped from queue.");
       }
       lastRequest = millis();
@@ -357,13 +356,13 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
 }
 
 // send: send request via Client connection
-void ModbusClientTCP::send(RequestEntry *request) {
+void ModbusClientTCP::send(RequestEntry request) {
   // We have a established connection here, so we can write right away.
   // Move tcpHead and request into one continuous buffer, since the very first request tends to 
   // take too long to be sent to be recognized.
   ModbusMessage m;
-  m.add((const uint8_t *)request->head, 6);
-  m.append(request->msg);
+  m.add((const uint8_t *)request.head, 6);
+  m.append(request.msg);
 
   MT_client.write(m.data(), m.size());
   // Done. Are we?
@@ -372,7 +371,7 @@ void ModbusClientTCP::send(RequestEntry *request) {
 }
 
 // receive: get response via Client connection
-ModbusMessage ModbusClientTCP::receive(RequestEntry *request) {
+ModbusMessage ModbusClientTCP::receive(RequestEntry request) {
   unsigned long lastMillis = millis();     // Timer to check for timeout
   bool hadData = false;               // flag data received
   const uint16_t dataLen(300);        // Modbus Packet supposedly will fit (260<300)
@@ -381,7 +380,7 @@ ModbusMessage ModbusClientTCP::receive(RequestEntry *request) {
   ModbusMessage response;             // Response structure to be returned
 
   // wait for packet data, overflow or timeout
-  while (millis() - lastMillis < request->target.timeout && dataPtr < dataLen && !hadData) {
+  while (millis() - lastMillis < request.target.timeout && dataPtr < dataLen && !hadData) {
     // Is there data waiting?
     if (MT_client.available()) {
       // Yes. catch as much as is there and fits into buffer
@@ -401,24 +400,24 @@ ModbusMessage ModbusClientTCP::receive(RequestEntry *request) {
     log_buf_v(data, dataPtr);
     // Yes. check it for validity
     // First transactionID and protocolID shall be identical, length has to match the remainder.
-    ModbusTCPhead head(request->head.transactionID, request->head.protocolID, dataPtr - 6);
+    ModbusTCPhead head(request.head.transactionID, request.head.protocolID, dataPtr - 6);
     // Matching head?
     if (memcmp((const uint8_t *)head, data, 6)) {
       // No. return Error response
-      response.setError(request->msg.getServerID(), request->msg.getFunctionCode(), TCP_HEAD_MISMATCH);
+      response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), TCP_HEAD_MISMATCH);
       // If the server id does not match that of the request, report error
-    } else if (data[6] != request->msg.getServerID()) {
-      response.setError(request->msg.getServerID(), request->msg.getFunctionCode(), SERVER_ID_MISMATCH);
+    } else if (data[6] != request.msg.getServerID()) {
+      response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), SERVER_ID_MISMATCH);
       // If the function code does not match that of the request, report error
-    } else if ((data[7] & 0x7F) != request->msg.getFunctionCode()) {
-      response.setError(request->msg.getServerID(), request->msg.getFunctionCode(), FC_MISMATCH);
+    } else if ((data[7] & 0x7F) != request.msg.getFunctionCode()) {
+      response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), FC_MISMATCH);
     } else {
       // Looks good.
       response.add(data + 6, dataPtr - 6);
     }
   } else {
     // No, timeout must have struck
-    response.setError(request->msg.getServerID(), request->msg.getFunctionCode(), TIMEOUT);
+    response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), TIMEOUT);
   }
   return response;
 }

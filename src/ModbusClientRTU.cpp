@@ -222,6 +222,7 @@ bool ModbusClientRTU::addToQueue(uint32_t token, ModbusMessage request, bool syn
   // Did we get one?
   if (request) {
     RequestEntry re(token, request, syncReq);
+    re.responseHandler = onResponseHandler;
     if (requests.size()<MR_qLimit) {
       // Yes. Safely lock queue and push request to queue
       rc = true;
@@ -309,9 +310,9 @@ void ModbusClientRTU::handleConnection(ModbusClientRTU *instance) {
             instance->syncResponse[request.token] = response;
           }
         // No, an async request. Do we have an onResponse handler?
-        } else if (instance->onResponse) {
+        } else if (request.responseHandler) {
           // Yes. Call it
-          instance->onResponse(response, request.token);
+          request.responseHandler(response, request.token);
         } else {
           // No, but we may have onData or onError handlers
           // Did we get a normal response?
