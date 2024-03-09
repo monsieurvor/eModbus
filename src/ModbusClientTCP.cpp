@@ -162,7 +162,7 @@ ModbusMessage ModbusClientTCP::syncRequestM(ModbusMessage msg, uint32_t token) {
 
   if (msg) {
     // Queue add successful?
-    if (!addToQueue(token, msg, onResponse, MT_target, true)) {
+    if (!addToQueue(token, msg, MT_target, true)) {
       // No. Return error after deleting the allocated request.
       response.setError(msg.getServerID(), msg.getFunctionCode(), REQUEST_QUEUE_FULL);
     } else {
