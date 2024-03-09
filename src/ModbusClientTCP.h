@@ -142,10 +142,10 @@ protected:
     uint32_t token;
     ModbusMessage msg;
     MBOnResponse responseHandler;
-    TargetHost target;
+    TargetHost &target;
     ModbusTCPhead head;
     bool isSyncRequest;
-    RequestEntry(uint32_t t, ModbusMessage m, MBOnResponse r, TargetHost tg, bool syncReq = false) :
+    RequestEntry(uint32_t t, ModbusMessage m, MBOnResponse r, TargetHost &tg, bool syncReq = false) :
       token(t),
       msg(m),
       responseHandler(r),
@@ -162,7 +162,7 @@ protected:
   ModbusMessage syncRequestMT(ModbusMessage msg, uint32_t token, IPAddress targetHost, uint16_t targetPort);
 
   // addToQueue: send freshly created request to queue
-  bool addToQueue(uint32_t token, ModbusMessage request, TargetHost target, bool syncReq = false);
+  bool addToQueue(uint32_t token, ModbusMessage request, TargetHost &target, bool syncReq = false);
 
   // handleConnection: worker task method
   static void handleConnection(ModbusClientTCP *instance);
@@ -187,9 +187,6 @@ protected:
   uint32_t MT_defaultTimeout;     // Standard timeout value taken if no dedicated was set
   uint32_t MT_defaultInterval;    // Standard interval value taken if no dedicated was set
   uint16_t MT_qLimit;             // Maximum number of requests to accept in queue
-
-  // Let any ModbusBridge class use protected members
-  template<typename SERVERCLASS> friend class ModbusBridge;
 };
 
 #endif  // HAS_FREERTOS

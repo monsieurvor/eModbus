@@ -111,9 +111,6 @@ protected:
   std::mutex syncRespM;            // Mutex protecting syncResponse map against race conditions
   std::mutex countAccessM;         // Mutex protecting access to the message and error counts
 #endif
-
-  // Let any ModbusBridge class use protected members
-  template<typename SERVERCLASS> friend class ModbusBridge;
 };
 
 #endif

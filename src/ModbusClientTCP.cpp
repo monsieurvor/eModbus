@@ -197,14 +197,14 @@ ModbusMessage ModbusClientTCP::syncRequestMT(ModbusMessage msg, uint32_t token, 
 }
 
 // addToQueue: send freshly created request to queue
-bool ModbusClientTCP::addToQueue(uint32_t token, ModbusMessage request, TargetHost target, bool syncReq) {
+bool ModbusClientTCP::addToQueue(uint32_t token, ModbusMessage request, TargetHost &target, bool syncReq) {
   bool rc = false;
   // Did we get one?
   log_d("Queue size: %d", (uint32_t)requests.size());
   log_buf_d(request.data(), request.size());
   if (request) {
     if (requests.size()<MT_qLimit) {
-      RequestEntry re = RequestEntry(token, request, onResponse, target, syncReq);
+      RequestEntry re(token, request, onResponse, target, syncReq);
       // inject proper transactionID
       re.head.transactionID = messageCount++;
       re.head.len = request.size();

@@ -7,7 +7,6 @@
 #include "ModbusClientRTU.h"
 #include "ModbusClientTCP.h"
 #include "ModbusServerWiFi.h"
-#include "ModbusBridgeWiFi.h"
 
 #include "Logging.h"
 
@@ -47,7 +46,6 @@ ModbusClientTCP TestClientWiFi(wc, 25);         // ModbusClientTCP test instance
 ModbusClientRTU RTUclient(GPIO_NUM_4);  // ModbusClientRTU test instance. Connect a LED to GPIO pin 4 to see the RTS toggle.
 ModbusServerRTU RTUserver(20000, RTStest);      // ModbusServerRTU instance
 ModbusServerWiFi MBserver;                      // ModbusServerWiFi instance
-ModbusBridgeWiFi Bridge;                        // Modbus bridge instance
 IPAddress ip = {127,   0,   0,   1};            // IP address of ModbusServerWiFi (loopback IF)
 uint16_t port = 502;                            // port of modbus server
 uint16_t testsExecuted = 0;            // Global test cases counter. Incremented in testOutput().
