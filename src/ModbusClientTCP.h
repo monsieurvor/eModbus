@@ -170,10 +170,10 @@ protected:
 #endif
 
   // send: send request via Client connection
-  void send(RequestEntry *request);
+  void send(RequestEntry request);
 
   // receive: get response via Client connection
-  ModbusMessage receive(RequestEntry *request);
+  ModbusMessage receive(RequestEntry request);
 
   void isInstance() { return; }   // make class instantiable
   queue<RequestEntry> requests;   // Queue to hold requests to be processed
