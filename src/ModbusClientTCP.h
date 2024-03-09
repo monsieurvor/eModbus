@@ -145,9 +145,10 @@ protected:
     TargetHost target;
     ModbusTCPhead head;
     bool isSyncRequest;
-    RequestEntry(uint32_t t, ModbusMessage m, TargetHost tg, bool syncReq = false) :
+    RequestEntry(uint32_t t, ModbusMessage m, MBOnResponse r, TargetHost tg, bool syncReq = false) :
       token(t),
       msg(m),
+      responseHandler(r),
       target(tg),
       head(ModbusTCPhead()),
       isSyncRequest(syncReq) {}

@@ -68,9 +68,10 @@ protected:
     ModbusMessage msg;
     MBOnResponse responseHandler;
     bool isSyncRequest;
-    RequestEntry(uint32_t t, ModbusMessage m, bool syncReq = false) :
+    RequestEntry(uint32_t t, ModbusMessage m, MBOnResponse r, bool syncReq = false) :
       token(t),
       msg(m),
+      responseHandler(r),
       isSyncRequest(syncReq) {}
   };
 

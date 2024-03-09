@@ -221,8 +221,7 @@ bool ModbusClientRTU::addToQueue(uint32_t token, ModbusMessage request, bool syn
   bool rc = false;
   // Did we get one?
   if (request) {
-    RequestEntry re(token, request, syncReq);
-    re.responseHandler = onResponseHandler;
+    RequestEntry re(token, request, onResponse, syncReq);
     if (requests.size()<MR_qLimit) {
       // Yes. Safely lock queue and push request to queue
       rc = true;
