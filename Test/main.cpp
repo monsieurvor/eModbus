@@ -143,7 +143,7 @@ ModbusMessage FC41(ModbusMessage request) {
 
 // Worker function for broadcast requests
 void BroadcastWorker(ModbusMessage request) {
-  log_buf_d(request.data(), request.size());
+  mb_log_buf_d(request.data(), request.size());
   // Count broadcasts
   broadcastCnt++;
 }
@@ -1551,7 +1551,7 @@ void setup()
     e = RTUclient.addBroadcastMessage(bcdata, bclen);
     if (e != SUCCESS) {
       ModbusError me(e);
-      log_w("%s failed: %d - %s", (const char *)bcdata, (int)me, (const char *)me);
+      mb_log_w("%s failed: %d - %s", (const char *)bcdata, (int)me, (const char *)me);
     }
     testsExecuted++;
     // We have no worker registered yet, so the message shall be discarded
@@ -1571,7 +1571,7 @@ void setup()
     e = RTUclient.addBroadcastMessage(bcdata, bclen);
     if (e != SUCCESS) {
       ModbusError me(e);
-      log_w("%s failed: %d - %s", (const char *)bcdata, (int)me, (const char *)me);
+      mb_log_w("%s failed: %d - %s", (const char *)bcdata, (int)me, (const char *)me);
     }
     testsExecuted++;
     // The BC must have been caught
@@ -1583,7 +1583,7 @@ void setup()
     if (!didit && !RTUserver.getWorker(1, USER_DEFINED_48)) {
       testsPassed++;
     } else {
-      log_w("unregisterWorker 01/48 failed (didit=%d)", didit ? 1 : 0);
+      mb_log_w("unregisterWorker 01/48 failed (didit=%d)", didit ? 1 : 0);
     }
 
     didit = RTUserver.unregisterWorker(1, USER_DEFINED_44);
@@ -1591,7 +1591,7 @@ void setup()
     if (didit && !RTUserver.getWorker(1, USER_DEFINED_44)) {
       testsPassed++;
     } else {
-      log_w("unregisterWorker 01/44 failed (didit=%d)", didit ? 1 : 0);
+      mb_log_w("unregisterWorker 01/44 failed (didit=%d)", didit ? 1 : 0);
     }
 
     didit = RTUserver.unregisterWorker(4);
@@ -1599,7 +1599,7 @@ void setup()
     if (!didit) {
       testsPassed++;
     } else {
-      log_w("unregisterWorker 04 failed (didit=%d)", didit ? 1 : 0);
+      mb_log_w("unregisterWorker 04 failed (didit=%d)", didit ? 1 : 0);
     }
 
     didit = RTUserver.unregisterWorker(2);
@@ -1607,7 +1607,7 @@ void setup()
     if (didit && !RTUserver.getWorker(2, READ_HOLD_REGISTER)) {
       testsPassed++;
     } else {
-      log_w("unregisterWorker 02 failed (didit=%d)", didit ? 1 : 0);
+      mb_log_w("unregisterWorker 02 failed (didit=%d)", didit ? 1 : 0);
     }
     WAIT_FOR_FINISH(RTUclient)
 
@@ -1626,21 +1626,21 @@ void setup()
       Serial2.updateBaudRate(myBaud);
       RTUclient.begin(Serial1);
       RTUserver.begin(Serial2);
-      log_w("testing %d baud.", myBaud);
+      mb_log_w("testing %d baud.", myBaud);
       testsExecuted++;
       ModbusMessage ret = RTUclient.syncRequest(myReq, Token++);
       Error e = ret.getError();
       // If not successful, report it
       if (e != SUCCESS) {
         ModbusError me(e);
-        log_w("Baud test failed at %u (%02X - %s)", myBaud, e, (const char *)me);
+        mb_log_w("Baud test failed at %u (%02X - %s)", myBaud, e, (const char *)me);
       } else {
         // No error, but is the responded value correct?
         uint16_t mySize = 0;
         ret.get(2, mySize);
         if (mySize != 162) {
           // No, report it.
-          log_w("Baud test failed at %u (size %u != 162)", myBaud, mySize);
+          mb_log_w("Baud test failed at %u (size %u != 162)", myBaud, mySize);
         } else {
           testsPassed++;
         }

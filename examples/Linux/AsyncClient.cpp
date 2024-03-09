@@ -7,18 +7,18 @@ bool gotIt = false;
 
 // Define a data handler
 void handleData(ModbusMessage response, uint32_t token) {
-  log_v("Response --- FC:%02X Server:%d Length:%d", 
+  mb_log_v("Response --- FC:%02X Server:%d Length:%d", 
     response.getFunctionCode(), 
     response.getServerID(), 
     response.size());
-  log_buf_v(response.data(), response.size());
+  mb_log_buf_v(response.data(), response.size());
   gotIt = true;
 }
 
 // Define an error handler
 void handleError(Error err, uint32_t token) {
   ModbusError me(err);
-  log_w("Error response: %s (%02X)", (const char *)me, err);
+  mb_log_w("Error response: %s (%02X)", (const char *)me, err);
   gotIt = true;
 }
 
@@ -38,19 +38,19 @@ int main(int argc, char **argv) {
   uint16_t words = 8;
 
   if (argc != 4) {
-    log_v("Usage: %s target address numRegisters", argv[0]);
+    mb_log_v("Usage: %s target address numRegisters", argv[0]);
     return -1;
   }
 
   if (int rc = parseTarget(argv[1], targetIP, targetPort, targetSID)) {
-    log_w("Invalid target descriptor. Must be IP[:port[:serverID]] or hostname[:port[:serverID]]");
+    mb_log_w("Invalid target descriptor. Must be IP[:port[:serverID]] or hostname[:port[:serverID]]");
     return -1;
   }
 
   addr = atoi(argv[2]) & 0xFFFF;
   words = atoi(argv[3]) & 0xFFFF;
 
-  log_v("Using %s:%u:%u @%u/%u", string(targetIP).c_str(), targetPort, targetSID, addr, words);
+  mb_log_v("Using %s:%u:%u @%u/%u", string(targetIP).c_str(), targetPort, targetSID, addr, words);
 
   // Disable Nagle algorithm
   cl.setNoDelay(true);
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
   Error err = MBclient.addRequest((uint32_t)millis(), targetSID, READ_HOLD_REGISTER, addr, words);
   if (err != SUCCESS) {
     ModbusError e(err);
-    log_w("Error creating request: %02X - %s", (int)e, (const char *)e);
+    mb_log_w("Error creating request: %02X - %s", (int)e, (const char *)e);
   }
 
   // We need to wait here for the response

@@ -46,7 +46,7 @@ void ModbusClientTCP::end() {
       requests.pop();
     }
   }
-  log_d("TCP client worker killed.");
+  mb_log_d("TCP client worker killed.");
   // Kill task
   if (worker) {
 #if IS_LINUX
@@ -72,9 +72,9 @@ void ModbusClientTCP::begin(int coreID) {
 #if IS_LINUX
     int rc = pthread_create(&worker, NULL, &pHandle, this);
     if (rc) {
-      log_e("Error creating TCP client thread: %d", rc);
+      mb_log_e("Error creating TCP client thread: %d", rc);
     } else {
-      log_d("TCP client worker started.");
+      mb_log_d("TCP client worker started.");
     }
 
 #else
@@ -83,10 +83,10 @@ void ModbusClientTCP::begin(int coreID) {
     snprintf(taskName, 18, "Modbus%02XTCP", instanceCounter);
     // Start task to handle the queue
     xTaskCreatePinnedToCore((TaskFunction_t)&handleConnection, taskName, CLIENT_TASK_STACK, this, 5, &worker, coreID >= 0 ? coreID : NULL);
-    log_d("TCP client worker %s started", taskName);
+    mb_log_d("TCP client worker %s started", taskName);
 #endif
   } else {
-    log_e("Worker thread has been already started!");
+    mb_log_e("Worker thread has been already started!");
   }
 }
 
@@ -103,7 +103,7 @@ bool ModbusClientTCP::setTarget(IPAddress host, uint16_t port, uint32_t timeout,
   MT_target.port = port;
   MT_target.timeout = timeout ? timeout : MT_defaultTimeout;
   MT_target.interval = interval ? interval : MT_defaultInterval;
-  log_d("Target set: %d.%d.%d.%d:%d", host[0], host[1], host[2], host[3], port);
+  mb_log_d("Target set: %d.%d.%d.%d:%d", host[0], host[1], host[2], host[3], port);
   if (MT_target.host == MT_lastTarget.host && MT_target.port == MT_lastTarget.port) return false;
   return true;
 }
@@ -133,7 +133,7 @@ Error ModbusClientTCP::addRequestM(ModbusMessage msg, uint32_t token) {
     }
   }
 
-  log_d("Add TCP request result: %02X", rc);
+  mb_log_d("Add TCP request result: %02X", rc);
   return rc;
 }
 
@@ -152,7 +152,7 @@ Error ModbusClientTCP::addRequestMT(ModbusMessage msg, uint32_t token, IPAddress
     }
   }
 
-  log_d("Add TCP request result: %02X", rc);
+  mb_log_d("Add TCP request result: %02X", rc);
   return rc;
 }
 
@@ -200,8 +200,8 @@ ModbusMessage ModbusClientTCP::syncRequestMT(ModbusMessage msg, uint32_t token, 
 bool ModbusClientTCP::addToQueue(uint32_t token, ModbusMessage request, TargetHost &target, bool syncReq) {
   bool rc = false;
   // Did we get one?
-  log_d("Queue size: %d", (uint32_t)requests.size());
-  log_buf_d(request.data(), request.size());
+  mb_log_d("Queue size: %d", (uint32_t)requests.size());
+  mb_log_buf_d(request.data(), request.size());
   if (request) {
     if (requests.size()<MT_qLimit) {
       RequestEntry re(token, request, onResponse, target, syncReq);
@@ -231,7 +231,7 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
       // Yes. pull it.
       RequestEntry request = instance->requests.front();
       doNotPop = false;
-      log_d("Got request from queue");
+      mb_log_d("Got request from queue");
 
       // Do we have a connection open?
       if (instance->MT_client.connected()) {
@@ -241,7 +241,7 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
         if (instance->MT_lastTarget != request.target) {
           // It is different. Disconnect it.
           instance->MT_client.stop();
-          log_d("Target different, disconnect");
+          mb_log_d("Target different, disconnect");
           delay(1);  // Give scheduler room to breathe
         } else {
           // it is the same host/port.
@@ -254,14 +254,14 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
         // Serial.println("Client reconnecting");
         // It is disconnected. connect to host/port from queue
         instance->MT_client.connect(request.target.host, request.target.port);
-        log_d("Target connect (%d.%d.%d.%d:%d).", request.target.host[0], request.target.host[1], request.target.host[2], request.target.host[3], request.target.port);
+        mb_log_d("Target connect (%d.%d.%d.%d:%d).", request.target.host[0], request.target.host[1], request.target.host[2], request.target.host[3], request.target.port);
 
         delay(1);  // Give scheduler room to breathe
       }
       ModbusMessage response;
       // Are we connected (again)?
       if (instance->MT_client.connected()) {
-        log_d("Is connected. Send request.");
+        mb_log_d("Is connected. Send request.");
         // Yes. Send the request via IP
         instance->send(request);
 
@@ -270,7 +270,7 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
 
         // Did we get a normal response?
         if (response.getError()==SUCCESS) {
-          log_d("Data response.");
+          mb_log_d("Data response.");
           // Yes. Is it a synchronous request?
           if (request.isSyncRequest) {
             // Yes. Put the response into the response map
@@ -287,11 +287,11 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
             // Yes. call it
             instance->onData(response, request.token);
           } else {
-            log_d("No handler for response!");
+            mb_log_d("No handler for response!");
           }
         } else {
           // No, something went wrong. All we have is an error
-          log_d("Error response.");
+          mb_log_d("Error response.");
           // Count it
           {
             LOCK_GUARD(responseCnt, instance->countAccessM);
@@ -313,7 +313,7 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
             // Yes. Forward the error code to it
             instance->onError(response.getError(), request.token);
           } else {
-            log_d("No onError handler");
+            mb_log_d("No onError handler");
           }
         }
         //   set lastHost/lastPort tp host/port
@@ -345,7 +345,7 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
         LOCK_GUARD(lockGuard, instance->qLock);
         // Remove the front queue entry
         instance->requests.pop();
-        log_d("Request popped from queue.");
+        mb_log_d("Request popped from queue.");
       }
       lastRequest = millis();
     } else {
@@ -366,7 +366,7 @@ void ModbusClientTCP::send(RequestEntry request) {
   MT_client.write(m.data(), m.size());
   // Done. Are we?
   MT_client.flush();
-  log_buf_v(m.data(), m.size());
+  mb_log_buf_v(m.data(), m.size());
 }
 
 // receive: get response via Client connection
@@ -395,8 +395,8 @@ ModbusMessage ModbusClientTCP::receive(RequestEntry request) {
   }
   // Did we get some data?
   if (hadData) {
-    log_d("Received response.");
-    log_buf_v(data, dataPtr);
+    mb_log_d("Received response.");
+    mb_log_buf_v(data, dataPtr);
     // Yes. check it for validity
     // First transactionID and protocolID shall be identical, length has to match the remainder.
     ModbusTCPhead head(request.head.transactionID, request.head.protocolID, dataPtr - 6);

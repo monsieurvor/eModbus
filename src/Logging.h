@@ -1,16 +1,39 @@
 #if defined(ESP32)
-#include <esp32-hal-log.h> // Use build flag `-D CORE_DEBUG_LEVEL` to set logging level
+#include <esp32-hal-log.h>
+#ifdef MODBUS_DEBUG 
+#define mb_log_v log_v
+#define mb_log_buf_v log_buf_v
+#define mb_log_d log_d
+#define mb_log_buf_d log_buf_d
+#define mb_log_i log_i
+#define mb_log_buf_i log_buf_i
+#define mb_log_w log_w
+#define mb_log_buf_w log_buf_w 
+#define mb_log_e log_e
+#define mb_log_buf_e log_buf_e
 #else
-#define log_v
-#define log_buf_v
-#define log_d
-#define log_buf_d
-#define log_i
-#define log_buf_i
-#define log_w
-#define log_buf_w
-#define log_e
-#define log_buf_e
+#define mb_log_v
+#define mb_log_buf_v
+#define mb_log_d
+#define mb_log_buf_d
+#define mb_log_i mb_log_i
+#define mb_log_buf_i
+#define mb_log_w
+#define mb_log_buf_w
+#define mb_log_e
+#define mb_log_buf_e
+#endif
+#else
+#define mb_log_v
+#define mb_log_buf_v
+#define mb_log_d
+#define mb_log_buf_d
+#define mb_log_i mb_log_i
+#define mb_log_buf_i
+#define mb_log_w
+#define mb_log_buf_w
+#define mb_log_e
+#define mb_log_buf_e
 #endif
 
 constexpr const char* str_end(const char *str) {

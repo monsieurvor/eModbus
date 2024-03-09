@@ -107,7 +107,7 @@ uint32_t RTUutils::calculateInterval(uint32_t baudRate) {
   // silent interval is at least 3.5x character time
   interval = 35000000UL / baudRate;  // 3.5 * 10 bits * 1000 µs * 1000 ms / baud
   if (interval < 1750) interval = 1750;       // lower limit according to Modbus RTU standard
-  log_v("Calc interval(%u)=%u", baudRate, interval);
+  mb_log_v("Calc interval(%u)=%u", baudRate, interval);
   return interval;
 }
 
@@ -168,7 +168,7 @@ void RTUutils::send(Stream& serial, unsigned long& lastMicros, uint32_t interval
     rts(LOW);
   }
 
-  log_buf_d(data, len);
+  mb_log_buf_d(data, len);
 
   // Mark end-of-message time for next interval
   lastMicros = micros();
@@ -257,7 +257,7 @@ ModbusMessage RTUutils::receive(uint8_t caller, Stream& serial, uint32_t timeout
             // Are we past the interval gap?
             if (micros() - lastMicros >= interval) {
               // Yes, terminate reading
-              log_v("%c/%ldus without data after %u", (const char)caller, micros() - lastMicros, bufferPtr);
+              mb_log_v("%c/%ldus without data after %u", (const char)caller, micros() - lastMicros, bufferPtr);
               state = DATA_READ;
               break;
             }
@@ -267,8 +267,8 @@ ModbusMessage RTUutils::receive(uint8_t caller, Stream& serial, uint32_t timeout
       // DATA_READ: successfully gathered some data. Prepare return object.
       case DATA_READ:
         // Did we get a sensible buffer length?
-        log_v("%c/", (const char)caller);
-        log_buf_v(buffer, bufferPtr);
+        mb_log_v("%c/", (const char)caller);
+        mb_log_buf_v(buffer, bufferPtr);
         if (bufferPtr >= 4)
         {
           // Yes. Check CRC
@@ -388,8 +388,8 @@ ModbusMessage RTUutils::receive(uint8_t caller, Stream& serial, uint32_t timeout
             case A_WAIT_LEAD_OUT:
               if (b == 0xF2) {
                 // Lead-out byte 2 received. Transfer buffer to returned message
-                log_v("%c/", (const char)caller);
-                log_buf_v(buffer, bufferPtr);
+                mb_log_v("%c/", (const char)caller);
+                mb_log_buf_v(buffer, bufferPtr);
                 // Did we get a sensible buffer length?
                 if (bufferPtr >= 3)
                 {
@@ -432,8 +432,8 @@ ModbusMessage RTUutils::receive(uint8_t caller, Stream& serial, uint32_t timeout
   // Deallocate buffer
   delete[] buffer;
 
-  log_d("%c/", (const char)caller);
-  log_buf_d(rv.data(), rv.size());
+  mb_log_d("%c/", (const char)caller);
+  mb_log_buf_d(rv.data(), rv.size());
 
   return rv;
 }

@@ -84,7 +84,7 @@ uint8_t  ModbusMessage::operator[](uint16_t index) const {
   if (index < MM_data.size()) {
     return MM_data[index];
   }
-  log_w("Index %d out of bounds (>=%d).", index, MM_data.size());
+  mb_log_w("Index %d out of bounds (>=%d).", index, MM_data.size());
   return 0;
 }
 // Resize internal MM_data
@@ -172,7 +172,7 @@ uint8_t ModbusMessage::determineFloatOrder() {
     // This will only work for 32bit floats, so check that
     if (floatSize != 4) {
       // OOPS! we cannot proceed.
-      log_e("Oops. float seems to be %d bytes wide instead of 4.", floatSize);
+      mb_log_e("Oops. float seems to be %d bytes wide instead of 4.", floatSize);
       return 0;
     }
 
@@ -197,11 +197,11 @@ uint8_t ModbusMessage::determineFloatOrder() {
     // All bytes found?
     if (matches != floatSize) {
       // No! There is something fishy...
-      log_e("Unable to determine float byte order (matched=%d of %d)", matches, floatSize);
+      mb_log_e("Unable to determine float byte order (matched=%d of %d)", matches, floatSize);
       floatOrder[0] = 0xFF;
       return 0;
     } else {
-      log_buf_v(floatOrder, floatSize);
+      mb_log_buf_v(floatOrder, floatSize);
     }
   }
   return floatSize;
@@ -216,7 +216,7 @@ uint8_t ModbusMessage::determineDoubleOrder() {
     // This will only work for 64bit doubles, so check that
     if (doubleSize != 8) {
       // OOPS! we cannot proceed.
-      log_e("Oops. double seems to be %d bytes wide instead of 8.", doubleSize);
+      mb_log_e("Oops. double seems to be %d bytes wide instead of 8.", doubleSize);
       return 0;
     }
 
@@ -241,11 +241,11 @@ uint8_t ModbusMessage::determineDoubleOrder() {
     // All bytes found?
     if (matches != doubleSize) {
       // No! There is something fishy...
-      log_e("Unable to determine double byte order (matched=%d of %d)", matches, doubleSize);
+      mb_log_e("Unable to determine double byte order (matched=%d of %d)", matches, doubleSize);
       doubleOrder[0] = 0xFF;
       return 0;
     } else {
-      log_buf_v(doubleOrder, doubleSize);
+      mb_log_buf_v(doubleOrder, doubleSize);
     }
   }
   return doubleSize;
@@ -254,7 +254,7 @@ uint8_t ModbusMessage::determineDoubleOrder() {
 // swapFloat() and swapDouble() will re-order the bytes of a float or double value
 // according a user-given pattern
 float ModbusMessage::swapFloat(float& f, int swapRule) {
-  log_v("swap float, swapRule=%02X", swapRule);
+  mb_log_v("swap float, swapRule=%02X", swapRule);
   // Make a byte pointer to the given float
   uint8_t *src = (uint8_t *)&f;
   // Define a "work bench" float and byte pointer to it
@@ -264,7 +264,7 @@ float ModbusMessage::swapFloat(float& f, int swapRule) {
   for (uint8_t i = 0; i < sizeof(float); ++i) {
     // Get i-th byte from the spot the swap table tells
     // (only the first 4 tables are valid for floats)
-    log_v("dst[%d] = src[%d]", i, swapTables[swapRule & 0x03][i]);
+    mb_log_v("dst[%d] = src[%d]", i, swapTables[swapRule & 0x03][i]);
     dst[i] = src[swapTables[swapRule & 0x03][i]];
     // Does the swar rule require nibble swaps?
     if (swapRule & 0x08) {
@@ -279,7 +279,7 @@ float ModbusMessage::swapFloat(float& f, int swapRule) {
 }
 
 double ModbusMessage::swapDouble(double& f, int swapRule) {
-  log_v("swap double, swapRule=%02X", swapRule);
+  mb_log_v("swap double, swapRule=%02X", swapRule);
   // Make a byte pointer to the given double
   uint8_t *src = (uint8_t *)&f;
   // Define a "work bench" double and byte pointer to it
@@ -288,7 +288,7 @@ double ModbusMessage::swapDouble(double& f, int swapRule) {
   // Loop over all bytes of a double
   for (uint8_t i = 0; i < sizeof(double); ++i) {
     // Get i-th byte from the spot the swap table tells
-    log_v("dst[%d] = src[%d]", i, swapTables[swapRule & 0x07][i]);
+    mb_log_v("dst[%d] = src[%d]", i, swapTables[swapRule & 0x07][i]);
     dst[i] = src[swapTables[swapRule & 0x07][i]];
     // Does the swar rule require nibble swaps?
     if (swapRule & 0x08) {
@@ -314,8 +314,8 @@ uint16_t ModbusMessage::add(vector<uint8_t> v) {
 // values will be added in IEEE754 byte sequence (MSB first)
 uint16_t ModbusMessage::add(float v, int swapRule) {
   // First check if we need to determine byte order
-  log_v("add float, swapRule=%02X", swapRule);
-  log_buf_v((uint8_t *)&v, sizeof(float));
+  mb_log_v("add float, swapRule=%02X", swapRule);
+  mb_log_buf_v((uint8_t *)&v, sizeof(float));
   if (determineFloatOrder()) {
     // If we get here, the floatOrder is known
     float interim = 0;
@@ -325,13 +325,13 @@ uint16_t ModbusMessage::add(float v, int swapRule) {
     for (uint8_t i = 0; i < sizeof(float); ++i) {
       dst[i] = src[floatOrder[i]];
     }
-    log_buf_v((uint8_t *)&interim, sizeof(float));
+    mb_log_buf_v((uint8_t *)&interim, sizeof(float));
     // Do we need to apply a swap rule?
     if (swapRule & 0x0B) {
       // Yes, so do it.
       swapFloat(interim, swapRule & 0x0B);
     }
-    log_buf_v((uint8_t *)&interim, sizeof(float));
+    mb_log_buf_v((uint8_t *)&interim, sizeof(float));
     // Put out the bytes of v in normalized (and swapped) sequence
     for (uint8_t i = 0; i < sizeof(float); ++i) {
       MM_data.push_back(dst[i]);
@@ -343,8 +343,8 @@ uint16_t ModbusMessage::add(float v, int swapRule) {
 
 uint16_t ModbusMessage::add(double v, int swapRule) {
   // First check if we need to determine byte order
-  log_v("add double, swapRule=%02X", swapRule);
-  log_buf_v((uint8_t *)&v, sizeof(double));
+  mb_log_v("add double, swapRule=%02X", swapRule);
+  mb_log_buf_v((uint8_t *)&v, sizeof(double));
   if (determineDoubleOrder()) {
     // If we get here, the doubleOrder is known
     double interim = 0;
@@ -354,13 +354,13 @@ uint16_t ModbusMessage::add(double v, int swapRule) {
     for (uint8_t i = 0; i < sizeof(double); ++i) {
       dst[i] = src[doubleOrder[i]];
     }
-    log_buf_v((uint8_t *)&interim, sizeof(double));
+    mb_log_buf_v((uint8_t *)&interim, sizeof(double));
     // Do we need to apply a swap rule?
     if (swapRule & 0x0F) {
       // Yes, so do it.
       swapDouble(interim, swapRule & 0x0F);
     }
-    log_buf_v((uint8_t *)&interim, sizeof(double));
+    mb_log_buf_v((uint8_t *)&interim, sizeof(double));
     // Put out the bytes of v in normalized (and swapped) sequence
     for (uint8_t i = 0; i < sizeof(double); ++i) {
       MM_data.push_back(dst[i]);
@@ -383,13 +383,13 @@ uint16_t ModbusMessage::get(uint16_t index, float& v, int swapRule) const {
       for (uint8_t i = 0; i < sizeof(float); ++i) {
         bytes[i] = MM_data[index + floatOrder[i]];
       }
-      log_buf_v((uint8_t *)&v, sizeof(float));
+      mb_log_buf_v((uint8_t *)&v, sizeof(float));
       // Do we need to apply a swap rule?
       if (swapRule & 0x0B) {
         // Yes, so do it.
         swapFloat(v, swapRule & 0x0B);
       }
-      log_buf_v((uint8_t *)&v, sizeof(float));
+      mb_log_buf_v((uint8_t *)&v, sizeof(float));
       index += sizeof(float);
     }
   }
@@ -408,13 +408,13 @@ uint16_t ModbusMessage::get(uint16_t index, double& v, int swapRule) const {
       for (uint8_t i = 0; i < sizeof(double); ++i) {
         bytes[i] = MM_data[index + doubleOrder[i]];
       }
-      log_buf_v((uint8_t *)&v, sizeof(double));
+      mb_log_buf_v((uint8_t *)&v, sizeof(double));
       // Do we need to apply a swap rule?
       if (swapRule & 0x0F) {
         // Yes, so do it.
         swapDouble(v, swapRule & 0x0F);
       }
-      log_buf_v((uint8_t *)&v, sizeof(double));
+      mb_log_buf_v((uint8_t *)&v, sizeof(double));
       index += sizeof(double);
     }
   }
@@ -444,7 +444,7 @@ Error ModbusMessage::checkServerFC(uint8_t serverID, uint8_t functionCode) {
 
 // 1. no additional parameter (FCs 0x07, 0x0b, 0x0c, 0x11)
 Error ModbusMessage::checkData(uint8_t serverID, uint8_t functionCode) {
-  log_v("Check data #1");
+  mb_log_v("Check data #1");
   Error returnCode = checkServerFC(serverID, functionCode);
   if (returnCode == SUCCESS)
   {
@@ -458,7 +458,7 @@ Error ModbusMessage::checkData(uint8_t serverID, uint8_t functionCode) {
 
 // 2. one uint16_t parameter (FC 0x18)
 Error ModbusMessage::checkData(uint8_t serverID, uint8_t functionCode, uint16_t p1) {
-  log_v("Check data #2");
+  mb_log_v("Check data #2");
   Error returnCode = checkServerFC(serverID, functionCode);
   if (returnCode == SUCCESS)
   {
@@ -472,7 +472,7 @@ Error ModbusMessage::checkData(uint8_t serverID, uint8_t functionCode, uint16_t 
 
 // 3. two uint16_t parameters (FC 0x01, 0x02, 0x03, 0x04, 0x05, 0x06)
 Error ModbusMessage::checkData(uint8_t serverID, uint8_t functionCode, uint16_t p1, uint16_t p2) {
-  log_v("Check data #3");
+  mb_log_v("Check data #3");
   Error returnCode = checkServerFC(serverID, functionCode);
   if (returnCode == SUCCESS)
   {
@@ -500,7 +500,7 @@ Error ModbusMessage::checkData(uint8_t serverID, uint8_t functionCode, uint16_t 
 
 // 4. three uint16_t parameters (FC 0x16)
 Error ModbusMessage::checkData(uint8_t serverID, uint8_t functionCode, uint16_t p1, uint16_t p2, uint16_t p3) {
-  log_v("Check data #4");
+  mb_log_v("Check data #4");
   Error returnCode = checkServerFC(serverID, functionCode);
   if (returnCode == SUCCESS)
   {
@@ -514,7 +514,7 @@ Error ModbusMessage::checkData(uint8_t serverID, uint8_t functionCode, uint16_t 
 
 // 5. two uint16_t parameters, a uint8_t length byte and a uint16_t* pointer to array of words (FC 0x10)
 Error ModbusMessage::checkData(uint8_t serverID, uint8_t functionCode, uint16_t p1, uint16_t p2, uint8_t count, uint16_t *arrayOfWords) {
-  log_v("Check data #5");
+  mb_log_v("Check data #5");
   Error returnCode = checkServerFC(serverID, functionCode);
   if (returnCode == SUCCESS)
   {
@@ -531,7 +531,7 @@ Error ModbusMessage::checkData(uint8_t serverID, uint8_t functionCode, uint16_t 
 
 // 6. two uint16_t parameters, a uint8_t length byte and a uint16_t* pointer to array of bytes (FC 0x0f)
 Error ModbusMessage::checkData(uint8_t serverID, uint8_t functionCode, uint16_t p1, uint16_t p2, uint8_t count, uint8_t *arrayOfBytes) {
-  log_v("Check data #6");
+  mb_log_v("Check data #6");
   Error returnCode = checkServerFC(serverID, functionCode);
   if (returnCode == SUCCESS)
   {
@@ -548,7 +548,7 @@ Error ModbusMessage::checkData(uint8_t serverID, uint8_t functionCode, uint16_t 
 
 // 7. generic constructor for preformatted data ==> count is counting bytes!
 Error ModbusMessage::checkData(uint8_t serverID, uint8_t functionCode, uint16_t count, uint8_t *arrayOfBytes) {
-  log_v("Check data #7");
+  mb_log_v("Check data #7");
   Error returnCode = checkServerFC(serverID, functionCode);
   if (returnCode == SUCCESS)
   {
@@ -696,7 +696,7 @@ Error ModbusMessage::setError(uint8_t serverID, uint8_t functionCode, Error erro
 
 // Error output in case a message constructor will fail
 void ModbusMessage::printError(const char *file, int lineNo, Error e, uint8_t serverID, uint8_t functionCode) {
-  log_e("(%s, line %d) Error in constructor: %02X - %s (%02X/%02X)", file_name(file), lineNo, e, (const char *)(ModbusError(e)), serverID, functionCode);
+  mb_log_e("(%s, line %d) Error in constructor: %02X - %s (%02X/%02X)", file_name(file), lineNo, e, (const char *)(ModbusError(e)), serverID, functionCode);
 }
 
 uint8_t ModbusMessage::floatOrder[] = { 0xFF };

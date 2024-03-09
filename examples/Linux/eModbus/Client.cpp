@@ -33,7 +33,7 @@ int Client::connect(IPAddress ip, uint16_t p) {
 // Get a fresh socket
   sockfd = ::socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0) {
-    log_e("Error %d opening socket", errno);
+    mb_log_e("Error %d opening socket", errno);
   }
 
 // Set up sockaddr_in struct
@@ -50,13 +50,13 @@ int Client::connect(IPAddress ip, uint16_t p) {
 // Failed?
   if (rc < 0) {
   // Yes. Print out error and return
-    log_e("Error %d connecting to %s:%d -", rc, buf, p);
-    log_e("%s", explain_connect(sockfd, (struct sockaddr *)&server, sizeof(server)));
+    mb_log_e("Error %d connecting to %s:%d -", rc, buf, p);
+    mb_log_e("%s", explain_connect(sockfd, (struct sockaddr *)&server, sizeof(server)));
     return rc;
   }
 
 // Connection was successful. Remember host data and return
-  log_d("Connected.");
+  mb_log_d("Connected.");
   host = ip;
   port = p;
   return 0;
@@ -69,7 +69,7 @@ int Client::connect(const char *host, uint16_t port) {
   IPAddress myHost = hostname_to_ip(host);
   if (myHost != NIL_ADDR) {
   // Failure. Report and bail out
-    log_e("No such host '%s'", host);
+    mb_log_e("No such host '%s'", host);
     return -1;
   }
   // Success - connect to found IP/port
@@ -87,7 +87,7 @@ bool Client::disconnect() {
     auto lastCall = millis();
   // ...but for 2s only
     while ((millis() - lastCall < 2000) && (sz = ::recv(sockfd, buf, BUFLEN, MSG_DONTWAIT)) > 0) {
-      log_buf_d(buf, sz);
+      mb_log_buf_d(buf, sz);
     }
   // Close socket
     ::close(sockfd);
@@ -102,11 +102,11 @@ bool Client::disconnect() {
 size_t Client::write(uint8_t t) {
 // Send byte, disabled SIGPIPE
   int rc = ::send(sockfd, &t, 1, MSG_NOSIGNAL);
-  log_d("send '%c' -> %d", (t > ' ' ? (char)t : '.'), rc);
+  mb_log_d("send '%c' -> %d", (t > ' ' ? (char)t : '.'), rc);
 // Something wrong?
   if (rc <= 0) {
   // Yes, print it out
-    log_e("Error sending: %s (%d)", strerror(errno), errno);
+    mb_log_e("Error sending: %s (%d)", strerror(errno), errno);
     return 0;
   }
   return 1;
@@ -116,11 +116,11 @@ size_t Client::write(uint8_t t) {
 size_t Client::write(const uint8_t *buf, size_t size) {
 // Send buffer, disabled SIGPIPE
   int rc = ::send(sockfd, buf, size, MSG_NOSIGNAL);
-  log_d("send buffer[%d] -> %d", size, rc);
+  mb_log_d("send buffer[%d] -> %d", size, rc);
 // Something wrong?
   if (rc <= 0) {
   // Yes, print it out
-    log_e("Error sending: %s (%d)", strerror(errno), errno);
+    mb_log_e("Error sending: %s (%d)", strerror(errno), errno);
     return 0;
   }
   return rc;
@@ -210,7 +210,7 @@ interrupted:
     default:        r = 0; break; // Assume closed...
     }
   }
-  log_d("returns %d (r=%d, errno=%d, %s)", ((r != 0) ? 1 : 0), r, errno, strerror(errno));
+  mb_log_d("returns %d (r=%d, errno=%d, %s)", ((r != 0) ? 1 : 0), r, errno, strerror(errno));
   return ((r != 0) ? 1 : 0);
 }
 
@@ -236,11 +236,11 @@ IPAddress Client::hostname_to_ip(const char *hostname)
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
 
-  log_d("Looking for '%s'", hostname);
+  mb_log_d("Looking for '%s'", hostname);
 
 // ask for host data
   if ((rv = getaddrinfo(hostname, NULL, &hints, &servinfo)) != 0) {
-    log_e("getaddrinfo: %s", gai_strerror(rv));
+    mb_log_e("getaddrinfo: %s", gai_strerror(rv));
     return returnIP;
   }
 
@@ -254,9 +254,9 @@ IPAddress Client::hostname_to_ip(const char *hostname)
   freeaddrinfo(servinfo);
 
   if (returnIP != NIL_ADDR) {
-    log_d("Host '%s'=%s", hostname, string(returnIP).c_str());
+    mb_log_d("Host '%s'=%s", hostname, string(returnIP).c_str());
   } else {
-    log_d("No IP for '%s' found", hostname);
+    mb_log_d("No IP for '%s' found", hostname);
   }
   return returnIP;
 }

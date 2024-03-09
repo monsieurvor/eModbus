@@ -58,9 +58,9 @@ int main(int argc, char **argv) {
   Error err = response.getError();
   if (err != SUCCESS) {
     ModbusError e(err);
-    log_w("Error creating request: %02X - %s", (int)e, (const char *)e);
+    mb_log_w("Error creating request: %02X - %s", (int)e, (const char *)e);
   } else {
-    log_buf_w(response.data(), response.size());
+    mb_log_buf_w(response.data(), response.size());
   }
 
   return 0;

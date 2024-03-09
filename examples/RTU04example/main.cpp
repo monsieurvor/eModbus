@@ -54,7 +54,7 @@ void handleError(Error error, uint32_t token)
 {
   // ModbusError wraps the error code and provides a readable error message for it
   ModbusError me(error);
-  log_e("Error response: %02X - %s", (int)me, (const char *)me);
+  mb_log_e("Error response: %02X - %s", (int)me, (const char *)me);
 }
 
 // Setup() - initialization happens here
@@ -91,7 +91,7 @@ void loop() {
     Error err = MB.addRequest((uint32_t)millis(), 1, READ_INPUT_REGISTER, FIRST_REGISTER, NUM_VALUES * 2);
     if (err!=SUCCESS) {
       ModbusError e(err);
-      log_e("Error creating request: %02X - %s", (int)e, (const char *)e);
+      mb_log_e("Error creating request: %02X - %s", (int)e, (const char *)e);
     }
     // Save current time to check for next cycle
     next_request = millis();
