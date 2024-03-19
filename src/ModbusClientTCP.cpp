@@ -329,9 +329,9 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
             instance->syncResponse[request.token] = response;
           }
         // No, but do we have an onResponse handler?
-        } else if (instance->onResponse) {
+        } else if (request.responseHandler) {
           // Yes, call it.
-          instance->onResponse(response, request.token);
+          request.responseHandler(response, request.token);
         // Finally, do we have an onError handler?
         } else if (instance->onError) {
           // Yes. Forward the error code to it
