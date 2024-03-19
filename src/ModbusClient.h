@@ -77,7 +77,7 @@ public:
 
     // Add it to the queue, if valid
     if (rc == SUCCESS) {
-      return addRequestM(m, handler, token);
+      return addRequestM(m, token, handler);
     }
     // Else return the error
     return rc;
