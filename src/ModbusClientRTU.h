@@ -76,11 +76,11 @@ protected:
   };
 
   // Base addRequest and syncRequest must be present
-  Error addRequestM(ModbusMessage msg, uint32_t token);
+  Error addRequestM(ModbusMessage msg, uint32_t token, MBOnResponse handler = nullptr);
   ModbusMessage syncRequestM(ModbusMessage msg, uint32_t token);
 
   // addToQueue: send freshly created request to queue
-  bool addToQueue(uint32_t token, ModbusMessage msg, bool syncReq = false);
+  bool addToQueue(uint32_t token, ModbusMessage msg, MBOnResponse handler = nullptr, bool syncReq = false);
 
   // handleConnection: worker task method
   static void handleConnection(ModbusClientRTU *instance);

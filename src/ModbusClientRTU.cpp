@@ -148,7 +148,7 @@ void ModbusClientRTU::clearQueue()
 }
 
 // Base addRequest taking a preformatted data buffer and length as parameters
-Error ModbusClientRTU::addRequestM(ModbusMessage msg, uint32_t token) {
+Error ModbusClientRTU::addRequestM(ModbusMessage msg, uint32_t token, MBOnResponse handler) {
   Error rc = SUCCESS;        // Return value
 
   mb_log_d("request for %02X/%02X", msg.getServerID(), msg.getFunctionCode());
@@ -156,7 +156,7 @@ Error ModbusClientRTU::addRequestM(ModbusMessage msg, uint32_t token) {
   // Add it to the queue, if valid
   if (msg) {
     // Queue add successful?
-    if (!addToQueue(token, msg)) {
+    if (!addToQueue(token, msg, handler)) {
       // No. Return error after deleting the allocated request.
       rc = REQUEST_QUEUE_FULL;
     }
@@ -172,7 +172,7 @@ ModbusMessage ModbusClientRTU::syncRequestM(ModbusMessage msg, uint32_t token) {
 
   if (msg) {
     // Queue add successful?
-    if (!addToQueue(token, msg, true)) {
+    if (!addToQueue(token, msg, nullptr, true)) {
       // No. Return error after deleting the allocated request.
       response.setError(msg.getServerID(), msg.getFunctionCode(), REQUEST_QUEUE_FULL);
     } else {
@@ -217,11 +217,11 @@ Error ModbusClientRTU::addBroadcastMessage(const uint8_t *data, uint8_t len) {
 
 
 // addToQueue: send freshly created request to queue
-bool ModbusClientRTU::addToQueue(uint32_t token, ModbusMessage request, bool syncReq) {
+bool ModbusClientRTU::addToQueue(uint32_t token, ModbusMessage request, MBOnResponse handler, bool syncReq) {
   bool rc = false;
   // Did we get one?
   if (request) {
-    RequestEntry re(token, request, onResponse, syncReq);
+    RequestEntry re(token, request, handler ? handler : onResponse, syncReq);
     if (requests.size()<MR_qLimit) {
       // Yes. Safely lock queue and push request to queue
       rc = true;

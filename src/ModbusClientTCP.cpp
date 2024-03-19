@@ -121,13 +121,13 @@ void ModbusClientTCP::clearQueue() {
 }
 
 // Base addRequest for preformatted ModbusMessage and last set target
-Error ModbusClientTCP::addRequestM(ModbusMessage msg, uint32_t token) {
+Error ModbusClientTCP::addRequestM(ModbusMessage msg, uint32_t token, MBOnResponse handler) {
   Error rc = SUCCESS;        // Return value
 
   // Add it to the queue, if valid
   if (msg) {
     // Queue add successful?
-    if (!addToQueue(token, msg, MT_target)) {
+    if (!addToQueue(token, msg, MT_target, handler)) {
       // No. Return error after deleting the allocated request.
       rc = REQUEST_QUEUE_FULL;
     }
@@ -146,7 +146,7 @@ Error ModbusClientTCP::addRequestMT(ModbusMessage msg, uint32_t token, IPAddress
     // Set up adhoc target 
     TargetHost adhocTarget(targetHost, targetPort, MT_defaultTimeout, MT_defaultInterval);
     // Queue add successful?
-    if (!addToQueue(token, msg, adhocTarget, true)) {
+    if (!addToQueue(token, msg, adhocTarget, nullptr, true)) {
       // No. Return error after deleting the allocated request.
       rc = REQUEST_QUEUE_FULL;
     }
@@ -162,7 +162,7 @@ ModbusMessage ModbusClientTCP::syncRequestM(ModbusMessage msg, uint32_t token) {
 
   if (msg) {
     // Queue add successful?
-    if (!addToQueue(token, msg, MT_target, true)) {
+    if (!addToQueue(token, msg, MT_target, nullptr, true)) {
       // No. Return error after deleting the allocated request.
       response.setError(msg.getServerID(), msg.getFunctionCode(), REQUEST_QUEUE_FULL);
     } else {
@@ -183,7 +183,7 @@ ModbusMessage ModbusClientTCP::syncRequestMT(ModbusMessage msg, uint32_t token, 
     // Set up adhoc target 
     TargetHost adhocTarget(targetHost, targetPort, MT_defaultTimeout, MT_defaultInterval);
     // Queue add successful?
-    if (!addToQueue(token, msg, adhocTarget, true)) {
+    if (!addToQueue(token, msg, adhocTarget, nullptr, true)) {
       // No. Return error after deleting the allocated request.
       response.setError(msg.getServerID(), msg.getFunctionCode(), REQUEST_QUEUE_FULL);
     } else {
@@ -197,14 +197,14 @@ ModbusMessage ModbusClientTCP::syncRequestMT(ModbusMessage msg, uint32_t token, 
 }
 
 // addToQueue: send freshly created request to queue
-bool ModbusClientTCP::addToQueue(uint32_t token, ModbusMessage request, TargetHost &target, bool syncReq) {
+bool ModbusClientTCP::addToQueue(uint32_t token, ModbusMessage request, TargetHost &target, MBOnResponse handler, bool syncReq) {
   bool rc = false;
   // Did we get one?
   mb_log_d("Queue size: %d", (uint32_t)requests.size());
   mb_log_buf_d(request.data(), request.size());
   if (request) {
     if (requests.size()<MT_qLimit) {
-      RequestEntry re(token, request, onResponse, target, syncReq);
+      RequestEntry re(token, request, handler ? handler : onResponse, target, syncReq);
       // inject proper transactionID
       re.head.transactionID = messageCount++;
       re.head.len = request.size();

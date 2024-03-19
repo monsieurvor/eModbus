@@ -68,7 +68,7 @@ public:
   // Template function to generate addRequest functions as long as there is a 
   // matching ModbusMessage::setMessage() call
   template <typename... Args>
-  Error addRequest(uint32_t token, Args&&... args) {
+  Error addRequest(uint32_t token, MBOnResponse handler = nullptr, Args&&... args) {
     Error rc = SUCCESS;        // Return value
 
     // Create request, if valid
@@ -77,7 +77,7 @@ public:
 
     // Add it to the queue, if valid
     if (rc == SUCCESS) {
-      return addRequestM(m, token);
+      return addRequestM(m, handler, token);
     }
     // Else return the error
     return rc;
@@ -88,7 +88,7 @@ protected:
   virtual void isInstance() = 0;   // Make class abstract
   ModbusMessage waitSync(uint8_t serverID, uint8_t functionCode, uint32_t token); // wait for syncRequest response to arrive
   // Virtual addRequest variant needed internally. All others done by template!
-  virtual Error addRequestM(ModbusMessage msg, uint32_t token) = 0;
+  virtual Error addRequestM(ModbusMessage msg, uint32_t token, MBOnResponse handler = nullptr) = 0;
   // Virtual syncRequest variant following the same pattern
   virtual ModbusMessage syncRequestM(ModbusMessage msg, uint32_t token) = 0;
   // Prevent copy construction or assignment

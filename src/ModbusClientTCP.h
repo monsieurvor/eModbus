@@ -155,14 +155,14 @@ protected:
   };
 
   // Base addRequest and syncRequest must be present
-  Error addRequestM(ModbusMessage msg, uint32_t token);
+  Error addRequestM(ModbusMessage msg, uint32_t token, MBOnResponse handler = nullptr);
   ModbusMessage syncRequestM(ModbusMessage msg, uint32_t token);
   // TCP-specific addition "...MT()" including adhoc target - used by bridge 
   Error addRequestMT(ModbusMessage msg, uint32_t token, IPAddress targetHost, uint16_t targetPort);
   ModbusMessage syncRequestMT(ModbusMessage msg, uint32_t token, IPAddress targetHost, uint16_t targetPort);
 
   // addToQueue: send freshly created request to queue
-  bool addToQueue(uint32_t token, ModbusMessage request, TargetHost &target, bool syncReq = false);
+  bool addToQueue(uint32_t token, ModbusMessage request, TargetHost &target, MBOnResponse handler = nullptr, bool syncReq = false);
 
   // handleConnection: worker task method
   static void handleConnection(ModbusClientTCP *instance);
