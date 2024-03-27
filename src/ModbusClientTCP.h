@@ -48,7 +48,10 @@ public:
   uint32_t pendingRequests();
 
   // Remove all pending request from queue
-  void clearQueue();
+  inline void clearQueue()
+  {
+    clearRequests = true;
+  }
 
 protected:
   // class describing a target server
@@ -178,6 +181,7 @@ protected:
 
   void isInstance() { return; }   // make class instantiable
   queue<RequestEntry> requests;   // Queue to hold requests to be processed
+  bool clearRequests;             // Bool to indicate requests must be cleared
   #if USE_MUTEX
   mutex qLock;                    // Mutex to protect queue
   #endif

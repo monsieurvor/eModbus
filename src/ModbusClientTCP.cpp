@@ -113,13 +113,6 @@ uint32_t ModbusClientTCP::pendingRequests() {
   return requests.size();
 }
 
-// Remove all pending request from queue
-void ModbusClientTCP::clearQueue() {
-  std::queue<RequestEntry> empty;
-  LOCK_GUARD(lockGuard, qLock);
-  std::swap(requests, empty);
-}
-
 // Base addRequest for preformatted ModbusMessage and last set target
 Error ModbusClientTCP::addRequestM(ModbusMessage msg, uint32_t token, MBOnResponse handler) {
   Error rc = SUCCESS;        // Return value
@@ -226,6 +219,14 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
 
   // Loop forever - or until task is killed
   while (1) {
+    // Clear requests if requested
+    if (instance->clearRequests)
+    {
+      std::queue<RequestEntry> empty;
+      LOCK_GUARD(lockGuard, qLock);
+      std::swap(requests, empty);
+      instance->clearRequests = false;
+    }
     // Do we have a request in queue?
     if (!instance->requests.empty()) {
       // Yes. pull it.
@@ -349,7 +350,7 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
       }
       lastRequest = millis();
     } else {
-      delay(1);  // Give scheduler room to breathe
+      delay(2);  // Give scheduler room to breathe
     }
   }
 }
