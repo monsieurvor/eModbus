@@ -223,8 +223,8 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
     if (instance->clearRequests)
     {
       std::queue<RequestEntry> empty;
-      LOCK_GUARD(lockGuard, qLock);
-      std::swap(requests, empty);
+      LOCK_GUARD(lockGuard, instance->qLock);
+      std::swap(instance->requests, empty);
       instance->clearRequests = false;
     }
     // Do we have a request in queue?
