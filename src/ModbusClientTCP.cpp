@@ -417,7 +417,7 @@ void ModbusClientTCP::_clearRequests()
   {
     ModbusMessage response;
     RequestEntry request = requests.front();
-    response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), TIMEOUT);
+    response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), QUEUE_CLEARED);
     request.responseHandler(response, request.token);
     requests.pop();
   }

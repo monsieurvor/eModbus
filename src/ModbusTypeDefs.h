@@ -64,6 +64,7 @@ enum Error : uint8_t {
   MEMORY_PARITY_ERROR    = 0x08,
   GATEWAY_PATH_UNAVAIL   = 0x0A,
   GATEWAY_TARGET_NO_RESP = 0x0B,
+  QUEUE_CLEARED          = 0x0F,
   TIMEOUT                = 0xE0,
   INVALID_SERVER         = 0xE1,
   CRC_ERROR              = 0xE2, // only for Modbus-RTU
