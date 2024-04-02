@@ -63,6 +63,8 @@ private:
             return "Gateway path unavailable";
         case GATEWAY_TARGET_NO_RESP: // 0x0B,
             return "Gateway target not responding";
+        case QUEUE_CLEARED: // 0x0F,
+            return "Queue cleared";
         case TIMEOUT: // 0xE0,
             return "Timeout";
         case INVALID_SERVER: // 0xE1,
