@@ -12,7 +12,7 @@ ModbusClient::ModbusClient() :
   messageCount(0),
   errorCount(0),
   #if HAS_FREERTOS
-  worker(NULL),
+  worker(NULL)
   #elif IS_LINUX
   worker(0)
   #endif
