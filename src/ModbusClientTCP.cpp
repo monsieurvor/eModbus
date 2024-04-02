@@ -322,6 +322,7 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
         } else if (request.responseHandler) {
           // Yes, call it.
           request.responseHandler(response, request.token);
+          instance->clearRequests = true;
         }
       }
       // Clean-up time. 
@@ -404,6 +405,7 @@ ModbusMessage ModbusClientTCP::receive(RequestEntry request) {
   } else {
     // No, timeout must have struck
     response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), TIMEOUT);
+    clearRequests = true;
   }
   return response;
 }
