@@ -223,6 +223,7 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
     {
       instance->_clearRequests();
       instance->clearRequests = false;
+      instance->MT_client.stop();
     }
     // Do we have a request in queue?
     if (!instance->requests.empty()) {
