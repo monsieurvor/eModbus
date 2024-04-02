@@ -25,15 +25,12 @@ using std::mutex;
 using std::lock_guard;
 #endif
 
-typedef std::function<void(ModbusMessage msg, uint32_t token)> MBOnData;
-typedef std::function<void(Modbus::Error errorCode, uint32_t token)> MBOnError;
+#define STOP_NOTIFICATION_VALUE 1
+
 typedef std::function<void(ModbusMessage msg, uint32_t token)> MBOnResponse;
 
 class ModbusClient {
 public:
-  bool onDataHandler(MBOnData handler);   // Accept onData handler 
-  bool onErrorHandler(MBOnError handler); // Accept onError handler 
-  bool onResponseHandler(MBOnResponse handler); // Accept onResponse handler 
   uint32_t getMessageCount();             // Informative: return number of messages created
   uint32_t getErrorCount();              // Informative: return number of errors received
   void resetCounts();                    // Set both message and error counts to zero
@@ -102,9 +99,6 @@ protected:
 #elif IS_LINUX
   pthread_t worker;
 #endif
-  MBOnData onData;                 // Data response handler
-  MBOnError onError;               // Error response handler
-  MBOnResponse onResponse;         // Uniform response handler
   static uint16_t instanceCounter; // Number of ModbusClients created
   std::map<uint32_t, ModbusMessage> syncResponse; // Map to hold response messages on synchronous requests
 #if USE_MUTEX

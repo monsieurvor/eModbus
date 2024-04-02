@@ -57,7 +57,10 @@ public:
   uint32_t pendingRequests();
 
   // Remove all pending request from queue
-  void clearQueue();
+  inline void clearQueue()
+  {
+    clearRequests = true;
+  }
   
   // addBroadcastMessage: create a fire-and-forget message to all servers on the RTU bus
   Error addBroadcastMessage(const uint8_t *data, uint8_t len);
@@ -92,6 +95,8 @@ protected:
   void doBegin(uint32_t baudRate, int coreID);
 
   void isInstance() { return; }   // make class instantiable
+  bool clearRequests;             // Bool to indicate requests must be cleared
+  void _clearRequests();          // Helper function to clear requests from queue, calling response handler
   queue<RequestEntry> requests;   // Queue to hold requests to be processed
   #if USE_MUTEX
   mutex qLock;                    // Mutex to protect queue

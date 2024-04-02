@@ -16,43 +16,7 @@ ModbusClient::ModbusClient() :
   #elif IS_LINUX
   worker(0),
   #endif
-  onData(nullptr),
-  onError(nullptr),
-  onResponse(nullptr) { instanceCounter++; }
-
-// onDataHandler: register callback for data responses
-bool ModbusClient::onDataHandler(MBOnData handler) {
-  if (onData) {
-    mb_log_w("onData handler was already claimed");
-  } else if (onResponse) {
-    mb_log_e("onData handler is unavailable with an onResponse handler");
-    return false;
-  }
-  onData = handler;
-  return true;
-}
-
-// onErrorHandler: register callback for error responses
-bool ModbusClient::onErrorHandler(MBOnError handler) {
-  if (onError) {
-    mb_log_w("onError handler was already claimed");
-  } else if (onResponse) {
-    mb_log_e("onError handler is unavailable with an onResponse handler");
-    return false;
-  } 
-  onError = handler;
-  return true;
-}
-
-// onResponseHandler: register callback for error responses
-bool ModbusClient::onResponseHandler(MBOnResponse handler) {
-  if (onError || onData) {
-    mb_log_e("onResponse handler is unavailable with an onData or onError handler");
-    return false;
-  } 
-  onResponse = handler;
-  return true;
-}
+  { instanceCounter++; }
 
 // getMessageCount: return message counter value
 uint32_t ModbusClient::getMessageCount() {
@@ -81,8 +45,8 @@ ModbusMessage ModbusClient::waitSync(uint8_t serverID, uint8_t functionCode, uin
   // Default response is TIMEOUT
   response.setError(serverID, functionCode, TIMEOUT);
 
-  // Loop 60 seconds, if unlucky
-  while (millis() - lostPatience < 60000) {
+  // Loop 10 seconds
+  while (millis() - lostPatience < 10000) {
     {
       LOCK_GUARD(lg, syncRespM);
       // Look for the token

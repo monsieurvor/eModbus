@@ -107,13 +107,13 @@ void ModbusClientTCPasync::clearQueue()
 }
 
 // Base addRequest for preformatted ModbusMessage and last set target
-Error ModbusClientTCPasync::addRequestM(ModbusMessage msg, uint32_t token) {
+Error ModbusClientTCPasync::addRequestM(ModbusMessage msg, uint32_t token, MBOnResponse handler) {
   Error rc = SUCCESS;        // Return value
 
   // Add it to the queue, if valid
   if (msg) {
     // Queue add successful?
-    if (!addToQueue(token, msg)) {
+    if (!addToQueue(token, msg, handler)) {
       // No. Return error after deleting the allocated request.
       rc = REQUEST_QUEUE_FULL;
     }
@@ -143,13 +143,13 @@ ModbusMessage ModbusClientTCPasync::syncRequestM(ModbusMessage msg, uint32_t tok
 }
 
 // addToQueue: send freshly created request to queue
-bool ModbusClientTCPasync::addToQueue(int32_t token, ModbusMessage request, bool syncReq) {
+bool ModbusClientTCPasync::addToQueue(int32_t token, ModbusMessage request, MBOnResponse handler = nullptr, bool syncReq) {
   // Did we get one?
   if (request) {
     LOCK_GUARD(lock1, qLock);
     if (txQueue.size() + rxQueue.size() < MTA_qLimit) {
       mb_log_buf_v(request.data(), request.size());
-      RequestEntry *re = new RequestEntry(token, request, syncReq);
+      RequestEntry *re = new RequestEntry(token, request, handler, syncReq);
       if (!re) return false;  //TODO: proper error returning in case allocation fails
       // inject proper transactionID
       re->head.transactionID = messageCount++;
@@ -189,16 +189,20 @@ void ModbusClientTCPasync::onDisconnected() {
   LOCK_GUARD(lock2, qLock);
   while (!txQueue.empty()) {
     RequestEntry* r = txQueue.front();
-    if (onError) {
-      onError(IP_CONNECTION_FAILED, r->token);
+    if (r->responseHandler) {
+      ModbusMessage response;
+      response.setError(r->msg.getServerID(), r->msg.getFunctionCode(), IP_CONNECTION_FAILED);
+      r->responseHandler(response, r->token);
     }
     delete r;
     txQueue.pop_front();
   }
   while (!rxQueue.empty()) {
     RequestEntry *r = rxQueue.begin()->second;
-    if (onError) {
-      onError(IP_CONNECTION_FAILED, r->token);
+    if (r->responseHandler) {
+      ModbusMessage response;
+      response.setError(r->msg.getServerID(), r->msg.getFunctionCode(), IP_CONNECTION_FAILED);
+      r->responseHandler(response, r->token);
     }
     delete r;
     rxQueue.erase(rxQueue.begin());
@@ -230,7 +234,7 @@ void ModbusClientTCPasync::onPacket(uint8_t* data, size_t length) {
   }
   while (length > 0) {
     RequestEntry* request = nullptr;
-    ModbusMessage* response = nullptr;
+    ModbusMessage response = nullptr;
     uint16_t transactionID = 0;
     uint16_t protocolID = 0;
     uint16_t messageLength = 0;
@@ -300,18 +304,10 @@ void ModbusClientTCPasync::onPacket(uint8_t* data, size_t length) {
           LOCK_GUARD(sL ,syncRespM);
           syncResponse[request->token] = *response;
         }
-      } else if (onResponse) {
-        onResponse(*response, request->token);
+      } else if (request->responseHandler) {
+        request->responseHandler(*response, request->token);
       } else {
-        if (error == SUCCESS) {
-          if (onData) {
-            onData(*response, request->token);
-          }
-        } else {
-          if (onError) {
-            onError(response->getError(), request->token);
-          }
-        }
+        mb_log_w("No response handler.");
       }
       delete request;
     }
@@ -337,9 +333,10 @@ void ModbusClientTCPasync::onPoll() {
     if (millis() - request->sentTime > MTA_timeout) {
       mb_log_d("request timeouts (now:%lu-sent:%u)", millis(), request->sentTime);
       // oldest element timeouts, call onError and clean up
-      if (onError) {
-        // Handle timeout error
-        onError(TIMEOUT, request->token);
+      if (request->responseHandler) {
+        ModbusMessage response;
+        response.setError(request->msg.getServerID(), request->msg.getFunctionCode(), TIMEOUT);
+        request->responseHandler(response, request->token);
       }
       delete request;
       rxQueue.erase(rxQueue.begin());

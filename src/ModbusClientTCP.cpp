@@ -37,25 +37,19 @@ ModbusClientTCP::~ModbusClientTCP() {
 
 // end: stop worker task
 void ModbusClientTCP::end() {
-  // Clean up queue
-  {
-    // Safely lock access
-    LOCK_GUARD(lockGuard, qLock);
-    // Get all queue entries one by one
-    while (!requests.empty()) {
-      requests.pop();
-    }
-  }
-  mb_log_d("TCP client worker killed.");
-  // Kill task
   if (worker) {
 #if IS_LINUX
+  // Kill task
     pthread_cancel(worker);
-    worker = NULL;
 #else
-    vTaskDelete(worker);
-    worker = nullptr;
+    xTaskNotify(worker, STOP_NOTIFICATION_VALUE, eSetValueWithOverwrite);
+    while (eTaskGetState(worker) != eTaskState::eDeleted)
+    {
+      vTaskDelay(5 / portTICK_PERIOD_MS);
+    }
 #endif
+  mb_log_d("TCP client worker killed.");
+  worker = nullptr;
   }
 }
 
@@ -79,8 +73,8 @@ void ModbusClientTCP::begin(int coreID) {
 
 #else
     // Create unique task name
-    char taskName[18];
-    snprintf(taskName, 18, "Modbus%02XTCP", instanceCounter);
+    char taskName[9];
+    snprintf(taskName, 9, "MB%02XTCP", instanceCounter);
     // Start task to handle the queue
     xTaskCreatePinnedToCore((TaskFunction_t)&handleConnection, taskName, CLIENT_TASK_STACK, this, 5, &worker, coreID >= 0 ? coreID : NULL);
     mb_log_d("TCP client worker %s started", taskName);
@@ -131,7 +125,7 @@ Error ModbusClientTCP::addRequestM(ModbusMessage msg, uint32_t token, MBOnRespon
 }
 
 // TCP addRequest for preformatted ModbusMessage and adhoc target
-Error ModbusClientTCP::addRequestMT(ModbusMessage msg, uint32_t token, IPAddress targetHost, uint16_t targetPort) {
+Error ModbusClientTCP::addRequestMT(ModbusMessage msg, uint32_t token, IPAddress targetHost, uint16_t targetPort, MBOnResponse handler) {
   Error rc = SUCCESS;        // Return value
 
   // Add it to the queue, if valid
@@ -139,7 +133,7 @@ Error ModbusClientTCP::addRequestMT(ModbusMessage msg, uint32_t token, IPAddress
     // Set up adhoc target 
     TargetHost adhocTarget(targetHost, targetPort, MT_defaultTimeout, MT_defaultInterval);
     // Queue add successful?
-    if (!addToQueue(token, msg, adhocTarget, nullptr, true)) {
+    if (!addToQueue(token, msg, adhocTarget, handler, true)) {
       // No. Return error after deleting the allocated request.
       rc = REQUEST_QUEUE_FULL;
     }
@@ -197,7 +191,7 @@ bool ModbusClientTCP::addToQueue(uint32_t token, ModbusMessage request, TargetHo
   mb_log_buf_d(request.data(), request.size());
   if (request) {
     if (requests.size()<MT_qLimit) {
-      RequestEntry re(token, request, handler ? handler : onResponse, target, syncReq);
+      RequestEntry re(token, request, handler, target, syncReq);
       // inject proper transactionID
       re.head.transactionID = messageCount++;
       re.head.len = request.size();
@@ -219,12 +213,15 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
 
   // Loop forever - or until task is killed
   while (1) {
+    if (ulTaskNotifyTake(pdTRUE, 1) == STOP_NOTIFICATION_VALUE)
+    {
+      instance->_clearRequests(); // Ensure event handlers are called
+      break;
+    }
     // Clear requests if requested
     if (instance->clearRequests)
     {
-      std::queue<RequestEntry> empty;
-      LOCK_GUARD(lockGuard, instance->qLock);
-      std::swap(instance->requests, empty);
+      instance->_clearRequests();
       instance->clearRequests = false;
     }
     // Do we have a request in queue?
@@ -283,12 +280,8 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
           } else if (request.responseHandler) {
             // Yes. Call it.
             request.responseHandler(response, request.token);
-          // No, but do we have an onData handler registered?
-          } else if (instance->onData) {
-            // Yes. call it
-            instance->onData(response, request.token);
           } else {
-            mb_log_d("No handler for response!");
+            mb_log_d("No response handler.");
           }
         } else {
           // No, something went wrong. All we have is an error
@@ -309,12 +302,8 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
           } else if (request.responseHandler) {
             // Yes, call it.
             request.responseHandler(response, request.token);
-          // No, but do we have an onError handler?
-          } else if (instance->onError) {
-            // Yes. Forward the error code to it
-            instance->onError(response.getError(), request.token);
           } else {
-            mb_log_d("No onError handler");
+            mb_log_d("No response handler");
           }
         }
         //   set lastHost/lastPort tp host/port
@@ -333,10 +322,6 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
         } else if (request.responseHandler) {
           // Yes, call it.
           request.responseHandler(response, request.token);
-        // Finally, do we have an onError handler?
-        } else if (instance->onError) {
-          // Yes. Forward the error code to it
-          instance->onError(IP_CONNECTION_FAILED, request.token);
         }
       }
       // Clean-up time. 
@@ -350,9 +335,10 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
       }
       lastRequest = millis();
     } else {
-      delay(2);  // Give scheduler room to breathe
+      delay(1);  // Give scheduler room to breathe
     }
   }
+  vTaskDelete(NULL);
 }
 
 // send: send request via Client connection
@@ -420,6 +406,19 @@ ModbusMessage ModbusClientTCP::receive(RequestEntry request) {
     response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), TIMEOUT);
   }
   return response;
+}
+
+void ModbusClientTCP::_clearRequests()
+{
+  LOCK_GUARD(lockGuard, instance->qLock);
+  while (!instance->requests.empty())
+  {
+    ModbusMessage response;
+    RequestEntry request = instance->requests.front();
+    response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), TIMEOUT);
+    request.responseHandler(response, request.token);
+    instance->requests.pop();
+  }
 }
 
 #endif

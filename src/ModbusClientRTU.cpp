@@ -76,30 +76,28 @@ void ModbusClientRTU::doBegin(uint32_t baudRate, int coreID) {
   MR_interval = RTUutils::calculateInterval(baudRate);
 
   // Create unique task name
-  char taskName[18];
-  snprintf(taskName, 18, "Modbus%02XRTU", instanceCounter);
+  char taskName[9];
+  snprintf(taskName, 9, "MB%02XRTU", instanceCounter);
   // Start task to handle the queue
   xTaskCreatePinnedToCore((TaskFunction_t)&handleConnection, taskName, CLIENT_TASK_STACK, this, 6, &worker, coreID >= 0 ? coreID : NULL);
 
-  mb_log_d("Client task %d started. Interval=%d", (uint32_t)worker, MR_interval);
+  mb_log_d("Client task %u started. Interval=%u", (uint32_t)worker, MR_interval);
 }
 
 // end: stop worker task
 void ModbusClientRTU::end() {
   if (worker) {
-    // Clean up queue
-    {
-      // Safely lock access
-      LOCK_GUARD(lockGuard, qLock);
-      // Get all queue entries one by one
-      while (!requests.empty()) {
-        // Remove front entry
-        requests.pop();
-      }
-    }
     // Kill task
-    vTaskDelete(worker);
-    mb_log_d("Client task %d killed.", (uint32_t)worker);
+#if IS_LINUX
+    pthread_cancel(worker);
+#else
+    xTaskNotify(worker, STOP_NOTIFICATION_VALUE, eSetValueWithOverwrite);
+    while (eTaskGetState(worker) != eTaskState::eDeleted)
+    {
+      vTaskDelay(5 / portTICK_PERIOD_MS);
+    }
+#endif
+    mb_log_d("Client task %u killed.", (uint32_t)worker);
     worker = nullptr;
   }
 }
@@ -107,7 +105,7 @@ void ModbusClientRTU::end() {
 // setTimeOut: set/change the default interface timeout
 void ModbusClientRTU::setTimeout(uint32_t TOV) {
   MR_timeoutValue = TOV;
-  mb_log_d("Timeout set to %d", TOV);
+  mb_log_d("Timeout set to %u", TOV);
 }
 
 // Toggle protocol to ModbusASCII
@@ -137,14 +135,6 @@ void ModbusClientRTU::skipLeading0x00(bool onOff) {
 // Return number of unprocessed requests in queue
 uint32_t ModbusClientRTU::pendingRequests() {
   return requests.size();
-}
-
-// Remove all pending request from queue
-void ModbusClientRTU::clearQueue()
-{
-  std::queue<RequestEntry> empty;
-  LOCK_GUARD(lockGuard, qLock);
-  std::swap(requests, empty);
 }
 
 // Base addRequest taking a preformatted data buffer and length as parameters
@@ -189,7 +179,7 @@ ModbusMessage ModbusClientRTU::syncRequestM(ModbusMessage msg, uint32_t token) {
 Error ModbusClientRTU::addBroadcastMessage(const uint8_t *data, uint8_t len) {
   Error rc = SUCCESS;        // Return value
 
-  mb_log_d("Broadcast request of length %d", len);
+  mb_log_d("Broadcast request of length %u", len);
 
   // We do only accept requests with data, 0 byte, data and CRC must fit into 256 bytes.
   if (len && len < 254) {
@@ -221,7 +211,7 @@ bool ModbusClientRTU::addToQueue(uint32_t token, ModbusMessage request, MBOnResp
   bool rc = false;
   // Did we get one?
   if (request) {
-    RequestEntry re(token, request, handler ? handler : onResponse, syncReq);
+    RequestEntry re(token, request, handler, syncReq);
     if (requests.size()<MR_qLimit) {
       // Yes. Safely lock queue and push request to queue
       rc = true;
@@ -247,6 +237,17 @@ void ModbusClientRTU::handleConnection(ModbusClientRTU *instance) {
 
   // Loop forever - or until task is killed
   while (1) {
+    if (ulTaskNotifyTake(pdTRUE, 1) == STOP_NOTIFICATION_VALUE)
+    {
+      instance->_clearRequests(); // Ensure event handlers are called
+      break;
+    }
+    // Clear requests if requested
+    if (instance->clearRequests)
+    {
+      instance->_clearRequests();
+      instance->clearRequests = false;
+    }
     // Do we have a reuest in queue?
     if (!instance->requests.empty()) {
       // Yes. pull it.
@@ -272,7 +273,7 @@ void ModbusClientRTU::handleConnection(ModbusClientRTU *instance) {
           instance->MR_useASCII,
           instance->MR_skipLeadingZeroByte);
   
-        mb_log_d("%s response (%d bytes) received.", response.size()>1 ? "Data" : "Error", response.size());
+        mb_log_d("%s response (%u bytes) received.", response.size()>1 ? "Data" : "Error", response.size());
         mb_log_buf_v(response.data(), response.size());
   
         // No error in receive()?
@@ -313,22 +314,7 @@ void ModbusClientRTU::handleConnection(ModbusClientRTU *instance) {
           // Yes. Call it
           request.responseHandler(response, request.token);
         } else {
-          // No, but we may have onData or onError handlers
-          // Did we get a normal response?
-          if (response.getError()==SUCCESS) {
-            // Yes. Do we have an onData handler registered?
-            if (instance->onData) {
-              // Yes. call it
-              instance->onData(response, request.token);
-            }
-          } else {
-            // No, something went wrong. All we have is an error
-            // Do we have an onError handler?
-            if (instance->onError) {
-              // Yes. Forward the error code to it
-              instance->onError(response.getError(), request.token);
-            }
-          }
+          mb_log_w("No response handler.");
         }
       }
       // Clean-up time. 
@@ -341,6 +327,20 @@ void ModbusClientRTU::handleConnection(ModbusClientRTU *instance) {
     } else {
       delay(1);
     }
+  }
+  vTaskDelete(NULL);
+}
+
+void ModbusClientRTU::_clearRequests()
+{
+  LOCK_GUARD(lockGuard, instance->qLock);
+  while (!instance->requests.empty())
+  {
+    ModbusMessage response;
+    RequestEntry request = instance->requests.front();
+    response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), TIMEOUT);
+    request.responseHandler(response, request.token);
+    instance->requests.pop();
   }
 }
 

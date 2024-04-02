@@ -24,10 +24,10 @@ using std::queue;
 class ModbusClientTCP : public ModbusClient {
 public:
   // Constructor takes reference to Client (EthernetClient or WiFiClient)
-  explicit ModbusClientTCP(Client& client, uint16_t queueLimit = 100);
+  explicit ModbusClientTCP(Client& client, uint16_t queueLimit = 50);
 
   // Alternative Constructor takes reference to Client (EthernetClient or WiFiClient) plus initial target host
-  ModbusClientTCP(Client& client, IPAddress host, uint16_t port, uint16_t queueLimit = 100);
+  ModbusClientTCP(Client& client, IPAddress host, uint16_t port, uint16_t queueLimit = 50);
 
   // Destructor: clean up queue, task etc.
   ~ModbusClientTCP();
@@ -161,7 +161,7 @@ protected:
   Error addRequestM(ModbusMessage msg, uint32_t token, MBOnResponse handler = nullptr);
   ModbusMessage syncRequestM(ModbusMessage msg, uint32_t token);
   // TCP-specific addition "...MT()" including adhoc target - used by bridge 
-  Error addRequestMT(ModbusMessage msg, uint32_t token, IPAddress targetHost, uint16_t targetPort);
+  Error addRequestMT(ModbusMessage msg, uint32_t token, IPAddress targetHost, uint16_t targetPort, MBOnResponse handler = nullptr);
   ModbusMessage syncRequestMT(ModbusMessage msg, uint32_t token, IPAddress targetHost, uint16_t targetPort);
 
   // addToQueue: send freshly created request to queue
@@ -182,6 +182,7 @@ protected:
   void isInstance() { return; }   // make class instantiable
   queue<RequestEntry> requests;   // Queue to hold requests to be processed
   bool clearRequests;             // Bool to indicate requests must be cleared
+  void _clearRequests();          // Helper function to clear requests from queue, calling response handler
   #if USE_MUTEX
   mutex qLock;                    // Mutex to protect queue
   #endif

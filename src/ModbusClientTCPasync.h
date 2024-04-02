@@ -28,7 +28,7 @@ using std::vector;
 class ModbusClientTCPasync : public ModbusClient {
 public:
   // Constructor takes address and port
-  explicit ModbusClientTCPasync(IPAddress address, uint16_t port = 502, uint16_t queueLimit = 100);
+  explicit ModbusClientTCPasync(IPAddress address, uint16_t port = 502, uint16_t queueLimit = 50);
 
   // Destructor: clean up queue, task etc.
   ~ModbusClientTCPasync();
@@ -97,23 +97,25 @@ protected:
   struct RequestEntry {
     uint32_t token;
     ModbusMessage msg;
+    MBOnResponse responseHandler;
     ModbusTCPhead head;
     uint32_t sentTime;
     bool isSyncRequest;
-    RequestEntry(uint32_t t, ModbusMessage m, bool syncReq = false) :
+    RequestEntry(uint32_t t, ModbusMessage m, MBOnResponse r, bool syncReq = false) :
       token(t),
       msg(m),
+      responseHandler(r),
       head(ModbusTCPhead()),
       sentTime(0),
       isSyncRequest(syncReq) {}
   };
 
   // Base addRequest and syncRequest both must be present
-  Error addRequestM(ModbusMessage msg, uint32_t token);
+  Error addRequestM(ModbusMessage msg, uint32_t token, MBOnResponse handler = nullptr);
   ModbusMessage syncRequestM(ModbusMessage msg, uint32_t token);
 
   // addToQueue: send freshly created request to queue
-  bool addToQueue(int32_t token, ModbusMessage request, bool syncReq = false);
+  bool addToQueue(int32_t token, ModbusMessage request, MBOnResponse handler = nullptr, bool syncReq = false);
 
   // send: send request via Client connection
   bool send(RequestEntry *request);
