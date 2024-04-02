@@ -14,7 +14,7 @@ ModbusClient::ModbusClient() :
   #if HAS_FREERTOS
   worker(NULL),
   #elif IS_LINUX
-  worker(0),
+  worker(0)
   #endif
   { instanceCounter++; }
 

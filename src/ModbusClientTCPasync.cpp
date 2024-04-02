@@ -129,7 +129,7 @@ ModbusMessage ModbusClientTCPasync::syncRequestM(ModbusMessage msg, uint32_t tok
 
   if (msg) {
     // Queue add successful?
-    if (!addToQueue(token, msg, true)) {
+    if (!addToQueue(token, msg, nullptr, true)) {
       // No. Return error after deleting the allocated request.
       response.setError(msg.getServerID(), msg.getFunctionCode(), REQUEST_QUEUE_FULL);
     } else {
@@ -143,7 +143,7 @@ ModbusMessage ModbusClientTCPasync::syncRequestM(ModbusMessage msg, uint32_t tok
 }
 
 // addToQueue: send freshly created request to queue
-bool ModbusClientTCPasync::addToQueue(int32_t token, ModbusMessage request, MBOnResponse handler = nullptr, bool syncReq) {
+bool ModbusClientTCPasync::addToQueue(int32_t token, ModbusMessage request, MBOnResponse handler, bool syncReq) {
   // Did we get one?
   if (request) {
     LOCK_GUARD(lock1, qLock);
@@ -234,7 +234,7 @@ void ModbusClientTCPasync::onPacket(uint8_t* data, size_t length) {
   }
   while (length > 0) {
     RequestEntry* request = nullptr;
-    ModbusMessage response = nullptr;
+    ModbusMessage* response = nullptr;
     uint16_t transactionID = 0;
     uint16_t protocolID = 0;
     uint16_t messageLength = 0;

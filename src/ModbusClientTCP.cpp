@@ -410,14 +410,14 @@ ModbusMessage ModbusClientTCP::receive(RequestEntry request) {
 
 void ModbusClientTCP::_clearRequests()
 {
-  LOCK_GUARD(lockGuard, instance->qLock);
-  while (!instance->requests.empty())
+  LOCK_GUARD(lockGuard, qLock);
+  while (!requests.empty())
   {
     ModbusMessage response;
-    RequestEntry request = instance->requests.front();
+    RequestEntry request = requests.front();
     response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), TIMEOUT);
     request.responseHandler(response, request.token);
-    instance->requests.pop();
+    requests.pop();
   }
 }
 
