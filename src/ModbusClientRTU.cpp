@@ -340,6 +340,7 @@ void ModbusClientRTU::_clearRequests()
     RequestEntry request = requests.front();
     response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), QUEUE_CLEARED);
     request.responseHandler(response, request.token);
+    messageCount--;
     requests.pop();
   }
 }
