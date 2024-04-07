@@ -223,7 +223,6 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
     {
       instance->_clearRequests();
       instance->clearRequests = false;
-      instance->MT_client.stop();
     }
     // Do we have a request in queue?
     if (!instance->requests.empty()) {
@@ -292,6 +291,8 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
             LOCK_GUARD(responseCnt, instance->countAccessM);
             instance->errorCount++;
           }
+          // Stop client
+          MT_client.stop();
           // Is it a synchronous request?
           if (request.isSyncRequest) {
             // Yes. Put the response into the response map
@@ -312,6 +313,8 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
       } else {
         // Oops. Connection failed
         response.setError(request.msg.getServerID(), request.msg.getFunctionCode(), IP_CONNECTION_FAILED);
+        // Stop client
+        MT_client.stop();
         // Is it a synchronous request?
         if (request.isSyncRequest) {
           // Yes. Put the response into the response map
