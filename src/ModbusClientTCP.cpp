@@ -291,8 +291,7 @@ void ModbusClientTCP::handleConnection(ModbusClientTCP *instance) {
             LOCK_GUARD(responseCnt, instance->countAccessM);
             instance->errorCount++;
           }
-          // Stop client
-          instance->MT_client.stop();
+          request.
           // Is it a synchronous request?
           if (request.isSyncRequest) {
             // Yes. Put the response into the response map
