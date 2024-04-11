@@ -18,6 +18,11 @@ ModbusClient::ModbusClient() :
   #endif
   { instanceCounter++; }
 
+ModbusClient::~ModbusClient()
+{
+  instanceCounter--;
+}
+
 // getMessageCount: return message counter value
 uint32_t ModbusClient::getMessageCount() {
   return messageCount;
