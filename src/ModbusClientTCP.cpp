@@ -43,9 +43,9 @@ void ModbusClientTCP::end() {
     pthread_cancel(worker);
 #else
     xTaskNotify(worker, STOP_NOTIFICATION_VALUE, eSetValueWithOverwrite);
-    while (eTaskGetState(worker) != eTaskState::eDeleted)
+    while (eTaskGetState(worker) < eTaskState::eDeleted)
     {
-      vTaskDelay(5 / portTICK_PERIOD_MS);
+      vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 #endif
   mb_log_d("TCP client worker killed.");
