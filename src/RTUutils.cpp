@@ -147,6 +147,9 @@ void RTUutils::send(Stream& serial, unsigned long& lastMicros, uint32_t interval
     // Send lead-out
     serial.write("\r");
     serial.flush();
+    // Mark end-of-message time for next interval
+    lastMicros = micros();
+    delayMicroseconds(115);
     // Toggle rtsPin, if necessary
     rts(LOW);
   } else {
@@ -164,14 +167,14 @@ void RTUutils::send(Stream& serial, unsigned long& lastMicros, uint32_t interval
     serial.write(crc16 & 0xff);
     serial.write((crc16 >> 8) & 0xFF);
     serial.flush();
+    // Mark end-of-message time for next interval
+    lastMicros = micros();
+    delayMicroseconds(115);
     // Toggle rtsPin, if necessary
     rts(LOW);
   }
 
   mb_log_buf_d(data, len);
-
-  // Mark end-of-message time for next interval
-  lastMicros = micros();
 }
 
 // send: send a message via Serial, watching interval times - including CRC!
