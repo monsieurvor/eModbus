@@ -159,6 +159,7 @@ void RTUutils::send(Stream& serial, unsigned long& lastMicros, uint32_t interval
 
     // Toggle rtsPin, if necessary
     rts(HIGH);
+    delayMicroseconds(120);
     // Write message
     serial.write(data, len);
     // Write CRC in LSB order
@@ -166,7 +167,7 @@ void RTUutils::send(Stream& serial, unsigned long& lastMicros, uint32_t interval
     serial.write((crc16 >> 8) & 0xFF);
     serial.flush();
     
-    delayMicroseconds(200);
+    delayMicroseconds(120);
     // Toggle rtsPin, if necessary
     rts(LOW);
   }
