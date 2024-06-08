@@ -23,25 +23,6 @@
     "url": "https://github.com/eModbus/eModbus",
     "branch": "master"
   },
-  "dependencies": [
-    {
-      "owner": "me-no-dev",
-      "name": "AsyncTCP",
-      "version": "*",
-      "platforms": ["espressif32"]
-    },
-    {
-      "owner": "me-no-dev",
-      "name": "ESPAsyncTCP",
-      "version": "*",
-      "platforms": ["espressif8266"]
-    },
-    {
-      "name": "custom-Ethernet",
-      "version": "https://github.com/maxgerhardt/Ethernet.git",
-      "platforms": ["espressif32"]
-    }
-  ],
   "export": {
     "include":
     [
