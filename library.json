@@ -16,11 +16,15 @@
       "url": "https://github.com/Miq1",
       "email": "miq1@gmx.de",
       "maintainer": true
+    },
+    {
+      "name": "Yvar Dankers",
+      "url": "https://github.com/monsieurvor"
     }
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/eModbus/eModbus",
+    "url": "https://github.com/monsieurvor/eModbus",
     "branch": "master"
   },
   "export": {
